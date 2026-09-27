@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-label="Level 9">
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-m" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <!-- Lines: a straight line has a zero-height bounding box, which clips a bbox-relative filter
+         to nothing. This one is measured in canvas units so horizontal and vertical lines keep their glow. -->
+    <filter id="glow-line" filterUnits="userSpaceOnUse" x="0" y="0" width="1600" height="900">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <linearGradient id="bar" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#f935f8"/><stop offset="1" stop-color="#80ffe4"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L12 6 L0 12 z" fill="#b9a9c9"/>
+    </marker>
+    <marker id="arrow-a" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L12 6 L0 12 z" fill="#80ffe4"/>
+    </marker>
+    <marker id="arrow-m" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L12 6 L0 12 z" fill="#f935f8"/>
+    </marker>
+  </defs>
+<path d="M130 160 H190 L215 185 V260 H130 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M250 160 H310 L335 185 V260 H250 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M370 160 H430 L455 185 V260 H370 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M490 160 H550 L575 185 V260 H490 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M610 160 H670 L695 185 V260 H610 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M130 310 H190 L215 335 V410 H130 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M250 310 H310 L335 335 V410 H250 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M370 310 H430 L455 335 V410 H370 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M490 310 H550 L575 335 V410 H490 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M610 310 H670 L695 335 V410 H610 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M130 460 H190 L215 485 V560 H130 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M250 460 H310 L335 485 V560 H250 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M370 460 H430 L455 485 V560 H370 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M490 460 H550 L575 485 V560 H490 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M610 460 H670 L695 485 V560 H610 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M130 610 H190 L215 635 V710 H130 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M250 610 H310 L335 635 V710 H250 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M370 610 H430 L455 635 V710 H370 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M490 610 H550 L575 635 V710 H490 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/><path d="M610 610 H670 L695 635 V710 H610 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M745 210 H880 V450 H960" fill="none" stroke="#b9a9c9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M745 360 H880 V450 H960" fill="none" stroke="#b9a9c9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/><path d="M745 510 H880 V450 H960" fill="none" stroke="#b9a9c9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M745 660 H880 V450 H960" fill="none" stroke="#b9a9c9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <g transform="translate(1080 450) rotate(45)"><rect x="-90" y="-90" width="180" height="180" rx="18" fill="rgba(128,255,228,0.16)" stroke="#80ffe4" stroke-width="5" filter="url(#glow)"/></g>
+      <path d="M1200 450 H1280" fill="none" stroke="#80ffe4" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-a)"/>
+      <rect x="1300" y="340" width="210" height="26" rx="13" fill="#80ffe4"/><rect x="1300" y="390" width="160" height="26" rx="13" fill="rgba(185,169,201,0.35)"/><rect x="1300" y="440" width="210" height="26" rx="13" fill="rgba(185,169,201,0.35)"/><rect x="1300" y="490" width="160" height="26" rx="13" fill="rgba(185,169,201,0.35)"/><rect x="1300" y="540" width="210" height="26" rx="13" fill="rgba(185,169,201,0.35)"/>
+</svg>

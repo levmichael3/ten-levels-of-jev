@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-label="Level 8">
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-m" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <!-- Lines: a straight line has a zero-height bounding box, which clips a bbox-relative filter
+         to nothing. This one is measured in canvas units so horizontal and vertical lines keep their glow. -->
+    <filter id="glow-line" filterUnits="userSpaceOnUse" x="0" y="0" width="1600" height="900">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <linearGradient id="bar" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#f935f8"/><stop offset="1" stop-color="#80ffe4"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L12 6 L0 12 z" fill="#b9a9c9"/>
+    </marker>
+    <marker id="arrow-a" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L12 6 L0 12 z" fill="#80ffe4"/>
+    </marker>
+    <marker id="arrow-m" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L12 6 L0 12 z" fill="#f935f8"/>
+    </marker>
+  </defs>
+<rect x="130" y="300" width="300" height="300" rx="18" fill="rgba(255,255,255,0.05)" stroke="rgba(128,255,228,0.32)" stroke-width="5"/>
+    <rect x="180" y="350" width="200" height="34" rx="8" fill="rgba(185,169,201,0.35)"/>
+    <rect x="180" y="410" width="170" height="28" rx="14" fill="rgba(185,169,201,0.35)"/><rect x="180" y="450" width="200" height="28" rx="14" fill="rgba(185,169,201,0.35)"/><rect x="180" y="490" width="140" height="28" rx="14" fill="rgba(185,169,201,0.35)"/>
+    <rect x="520" y="300" width="220" height="80" rx="18" fill="rgba(128,255,228,0.16)" stroke="#80ffe4" stroke-width="5" filter="url(#glow)"/><rect x="520" y="410" width="220" height="80" rx="18" fill="rgba(255,255,255,0.05)" stroke="rgba(128,255,228,0.32)" stroke-width="5"/><rect x="520" y="520" width="220" height="80" rx="18" fill="rgba(255,255,255,0.05)" stroke="rgba(128,255,228,0.32)" stroke-width="5"/>
+    <path d="M430 450 H510" fill="none" stroke="#b9a9c9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+    <path d="M740 340 H830 V450 H900" fill="none" stroke="#b9a9c9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+    <path d="M910 380 H1010 L1050 420 V560 H910 Z" fill="rgba(255,255,255,0.05)" stroke="#b9a9c9" stroke-width="5" stroke-linejoin="round"/>
+    <rect x="935" y="440" width="70" height="28" rx="14" fill="rgba(185,169,201,0.35)"/><rect x="935" y="470" width="90" height="28" rx="14" fill="rgba(185,169,201,0.35)"/><rect x="935" y="500" width="60" height="28" rx="14" fill="rgba(185,169,201,0.35)"/>
+    <path d="M1060 470 H1150" fill="none" stroke="#b9a9c9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+    <g transform="translate(1260 470) rotate(45)"><rect x="-80" y="-80" width="160" height="160" rx="16" fill="rgba(128,255,228,0.16)" stroke="#80ffe4" stroke-width="5" filter="url(#glow)"/></g>
+    <path d="M1260 580 V700 H640 V400" fill="none" stroke="#80ffe4" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-a)" stroke-dasharray="14 12"/>
+</svg>

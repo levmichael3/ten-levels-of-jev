@@ -1,0 +1,23 @@
+{
+  "name": "ten-levels-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "oxlint src",
+    "heroes": "node scripts/build-heroes.mjs"
+  },
+  "dependencies": {
+    "gpt-tokenizer": "^4.0.0",
+    "vue": "^3.5.43",
+    "vue-router": "^5.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.9",
+    "oxlint": "^1.85.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.0"
+  }
+}

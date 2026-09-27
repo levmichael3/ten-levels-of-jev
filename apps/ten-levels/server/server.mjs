@@ -1,0 +1,197 @@
+/**
+ * Lab server. Zero dependencies, node:http only.
+ *
+ *   GET  /api/state           { provider, live, calls }
+ *   GET  /api/level/:n        { n, options: [{ key, name, file, inputs: [setA, setB, setC], call, code }] }
+ *   POST /api/run/:n?option=A body { input } -> SSE stream: option-start, then per Jev call
+ *                             request (state + questions) and response (typed answers + meta),
+ *                             per-option events (tick, beam-step, agent-*), decision, level-done
+ *   POST /api/agent/start     body { level, option, config } -> { id, model }; spawns pi in RPC mode
+ *   GET  /api/agent/:id/events SSE: every session event so far, then live (agent, tool, jev, hook, stats)
+ *   POST /api/agent/:id/prompt body { message }
+ *   POST /api/agent/:id/abort
+ *   DELETE /api/agent/:id
+ *   GET  /*                   the built Vue app in ../web/dist (SPA fallback to index.html)
+ *
+ * Live by default when a TypeSafe or OpenRouter key is set; JEV_BACKEND=mock forces offline.
+ */
+// The demo opts into mock only when no live credentials exist. Otherwise the
+// shared client chooses TypeSafe first, then OpenRouter, once on construction.
+if (!process.env.JEV_BACKEND && !process.env.TYPESAFE_API_KEY?.trim() && !process.env.OPENROUTER_API_KEY?.trim()) {
+  process.env.JEV_BACKEND = "mock";
+}
+
+import http from "node:http";
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { extname, join, normalize } from "node:path";
+import { sharedJev } from "../src/core/client.ts";
+import { SCENARIOS } from "./scenarios.mjs";
+import * as agents from "./agent-session.mjs";
+
+const DIST = fileURLToPath(new URL("../web/dist/", import.meta.url));
+const EXT_DIR = fileURLToPath(new URL("../extensions/", import.meta.url));
+const SANDBOX = fileURLToPath(new URL("../sandbox/", import.meta.url));
+const LEVELS_DIR = fileURLToPath(new URL("../src/levels/", import.meta.url));
+const PORT = Number(process.env.PORT || 4399);
+
+const client = sharedJev();
+
+const MIME = {
+  ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
+  ".svg": "image/svg+xml", ".png": "image/png", ".json": "application/json", ".woff2": "font/woff2", ".ico": "image/x-icon",
+};
+
+function sse(res, event, data) {
+  res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+}
+
+/** The page shows the real source, minus comments: block comments, full-line comments, and 3+ blank lines collapsed. */
+function stripComments(source) {
+  return source
+    .replace(/^[ \t]*\/\*\*[\s\S]*?\*\/\n?/gm, "")
+    .replace(/^[ \t]*\/\/[^\n]*\n/gm, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim() + "\n";
+}
+
+async function readJson(req) {
+  let body = "";
+  for await (const chunk of req) body += chunk;
+  return body ? JSON.parse(body) : {};
+}
+
+async function runOption(level, option, input, res) {
+  sse(res, "option-start", { level, option: option.key, name: option.name });
+  const off = client.on((e) => sse(res, e.kind, e));
+  try {
+    const emit = (e) => sse(res, e.kind, e);
+    const output = await option.run(input, { emit });
+    sse(res, "decision", { level, option: option.key, name: option.name, input, output });
+  } catch (err) {
+    sse(res, "option-error", { level, option: option.key, error: String(err?.message ?? err) });
+  } finally {
+    off();
+  }
+  sse(res, "level-done", { level });
+}
+
+const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
+
+  if (url.pathname === "/api/state") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ provider: client.provider, live: client.isLive, calls: client.calls }));
+  }
+
+  // Agent sessions: one pi process per run, driven over RPC.
+  if (url.pathname === "/api/agent/start" && req.method === "POST") {
+    let body;
+    try { body = await readJson(req); } catch { res.writeHead(400); return res.end("{}"); }
+    const scenario = SCENARIOS[Number(body.level)];
+    const option = scenario?.options.find((o) => o.key === (body.option || "A"));
+    if (!scenario?.agent || !option) {
+      res.writeHead(404, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ error: "not an agent level or unknown option" }));
+    }
+    const session = agents.start({
+      level: Number(body.level), option: option.key,
+      extension: join(EXT_DIR, option.extension), tools: option.tools, cwd: SANDBOX,
+      config: body.config ?? {},
+    });
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ id: session.id, model: session.model }));
+  }
+  const agentMatch = url.pathname.match(/^\/api\/agent\/([a-z0-9]+)(?:\/(events|prompt|abort))?$/);
+  if (agentMatch) {
+    const session = agents.getSession(agentMatch[1]);
+    if (!session) { res.writeHead(404, { "Content-Type": "application/json" }); return res.end(JSON.stringify({ error: "no such session" })); }
+    const action = agentMatch[2];
+    if (action === "events" && req.method === "GET") {
+      res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" });
+      const off = session.subscribe((item) => sse(res, "item", item));
+      req.on("close", off);
+      return;
+    }
+    try {
+      if (action === "prompt" && req.method === "POST") {
+        const body = await readJson(req);
+        await session.prompt(String(body.message ?? ""));
+      } else if (action === "abort" && req.method === "POST") {
+        await session.abort();
+      } else if (!action && req.method === "DELETE") {
+        session.close();
+      } else {
+        res.writeHead(405); return res.end();
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ ok: true }));
+    } catch (err) {
+      res.writeHead(409, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ error: String(err?.message ?? err) }));
+    }
+  }
+
+  const levelMatch = url.pathname.match(/^\/api\/level\/(\d+)$/);
+  if (levelMatch && SCENARIOS[Number(levelMatch[1])]) {
+    const n = Number(levelMatch[1]);
+    const options = await Promise.all(SCENARIOS[n].options.map(async (o) => ({
+      key: o.key, name: o.name, file: `src/levels/${o.file}`, inputs: o.inputs, call: o.call,
+      extension: o.extension, tools: o.tools,
+      code: stripComments(await readFile(join(LEVELS_DIR, o.file), "utf8")),
+    })));
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ n, agent: !!SCENARIOS[n].agent, options }));
+  }
+
+  const runMatch = url.pathname.match(/^\/api\/run\/(\d+)$/);
+  if (runMatch && req.method === "POST") {
+    const n = Number(runMatch[1]);
+    const scenario = SCENARIOS[n];
+    const option = scenario?.options.find((o) => o.key === (url.searchParams.get("option") || "A"));
+    if (!option) {
+      res.writeHead(404, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ error: "unknown level or option" }));
+    }
+    let input = option.inputs[0];
+    try {
+      const body = await readJson(req);
+      if (body && typeof body.input === "object" && body.input) input = body.input;
+    } catch {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ error: "body must be JSON { input }" }));
+    }
+    res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" });
+    await runOption(n, option, input, res);
+    return res.end();
+  }
+
+  if (url.pathname.startsWith("/api/")) {
+    res.writeHead(404, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ error: "not found" }));
+  }
+
+  // Static: the built Vue app, with SPA fallback for client routes.
+  const path = normalize(url.pathname);
+  if (path.includes("..")) { res.writeHead(403); return res.end(); }
+  const candidates = [join(DIST, path), join(DIST, "index.html")];
+  // A hard refresh (shift reload) sends Cache-Control: no-cache; a normal reload sends max-age=0.
+  // The page reads the mark and starts with every level hidden again.
+  const hardReload = /no-cache/.test(req.headers["cache-control"] ?? "") || /no-cache/.test(req.headers.pragma ?? "");
+  for (const file of candidates) {
+    try {
+      let data = await readFile(file);
+      if (hardReload && file.endsWith("index.html")) {
+        data = data.toString().replace("</head>", "<script>window.__JEV_HARD_RELOAD__=true</script></head>");
+      }
+      res.writeHead(200, { "Content-Type": MIME[extname(file)] ?? "application/octet-stream", "Cache-Control": "no-cache" });
+      return res.end(data);
+    } catch { /* next candidate */ }
+  }
+  res.writeHead(503, { "Content-Type": "text/plain; charset=utf-8" });
+  res.end("No build found. Run `just web` (builds web/dist, then starts this server).");
+});
+
+server.listen(PORT, "127.0.0.1", () => {
+  console.log(`10 Levels of Jev lab → http://127.0.0.1:${PORT} (backend: ${client.provider})`);
+});

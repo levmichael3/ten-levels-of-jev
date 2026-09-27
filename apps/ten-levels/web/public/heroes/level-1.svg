@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-label="Level 1">
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-m" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <!-- Lines: a straight line has a zero-height bounding box, which clips a bbox-relative filter
+         to nothing. This one is measured in canvas units so horizontal and vertical lines keep their glow. -->
+    <filter id="glow-line" filterUnits="userSpaceOnUse" x="0" y="0" width="1600" height="900">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <linearGradient id="bar" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#f935f8"/><stop offset="1" stop-color="#80ffe4"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L12 6 L0 12 z" fill="#b9a9c9"/>
+    </marker>
+    <marker id="arrow-a" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L12 6 L0 12 z" fill="#80ffe4"/>
+    </marker>
+    <marker id="arrow-m" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L12 6 L0 12 z" fill="#f935f8"/>
+    </marker>
+  </defs>
+<rect x="130" y="270" width="340" height="340" rx="18" fill="rgba(255,255,255,0.05)" stroke="rgba(128,255,228,0.32)" stroke-width="5"/>
+    <rect x="180" y="330" width="90" height="70" rx="12" fill="rgba(185,169,201,0.35)"/>
+    <rect x="180" y="436" width="230" height="28" rx="14" fill="rgba(185,169,201,0.35)"/><rect x="180" y="484" width="250" height="28" rx="14" fill="rgba(185,169,201,0.35)"/><rect x="180" y="532" width="200" height="28" rx="14" fill="rgba(185,169,201,0.35)"/>
+    <path d="M470 440 H660" fill="none" stroke="#b9a9c9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+    <g transform="translate(800 440) rotate(45)"><rect x="-110" y="-110" width="220" height="220" rx="20" fill="rgba(128,255,228,0.16)" stroke="#80ffe4" stroke-width="5" filter="url(#glow)"/></g>
+    <path d="M960 440 H1020 V290 H1120" fill="none" stroke="#b9a9c9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+    <path d="M1020 440 V610 H1120" fill="none" stroke="#b9a9c9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+    <rect x="1130" y="220" width="340" height="150" rx="18" fill="rgba(94,240,122,0.18)" stroke="#5ef07a" stroke-width="5" filter="url(#glow)"/>
+    <rect x="1130" y="540" width="340" height="150" rx="18" fill="rgba(255,255,255,0.05)" stroke="rgba(128,255,228,0.32)" stroke-width="5"/>
+</svg>

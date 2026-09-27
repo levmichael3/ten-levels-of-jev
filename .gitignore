@@ -1,0 +1,7 @@
+.env
+node_modules/
+.DS_Store
+apps/ten-levels/web/dist/
+apps/ten-levels/.sessions/
+apps/ten-levels/.sandboxes/
+.playwright-cli/
