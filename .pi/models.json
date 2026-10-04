@@ -1,0 +1,21 @@
+{
+  "providers": {
+    "litellm": {
+      "baseUrl": "https://litellm.tikalk.dev/v1",
+      "api": "openai-completions",
+      "apiKey": "$LITELLM_API_KEY",
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false
+      },
+      "models": [
+        {
+          "id": "gemini/gemini-3.8-flash",
+          "name": "Gemini 3.8 Flash (LiteLLM)",
+          "reasoning": true,
+          "contextWindow": 1000000
+        }
+      ]
+    }
+  }
+}

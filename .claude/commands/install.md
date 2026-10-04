@@ -1,5 +1,5 @@
 ---
-description: Install 10 Levels of Jev — prerequisites, the web dependencies, the OpenRouter key, pi for the agentic levels, and a first offline test run
+description: Install 10 Levels of Jev — prerequisites, the web dependencies, the TypeSafe key, pi for the agentic levels, and a first offline test run
 ---
 
 # Install 10 Levels of Jev
@@ -22,7 +22,7 @@ ENV_SAMPLE: `.env.sample`
 
 ```
 apps/ten-levels/
-├── src/core/          # the Jev wire contract and client (mock, OpenRouter, TypeSafe)
+├── src/core/          # the Jev wire contract and client (mock, TypeSafe, LiteLLM)
 ├── src/levels/        # level01 .. level10, one file per option
 ├── extensions/        # pi extensions for levels 6 to 10, plus report.ts
 ├── sandbox/           # the repo the agents work in; .pi/settings.json sets keepRecentTokens
@@ -41,7 +41,7 @@ justfile               # every recipe; loads .env
 - Do NOT read or display API key values — only confirm they are set.
 - Never start `just web` or `just dev` from this command; only verify readiness.
 - The app itself has zero runtime dependencies. Only `web/` needs an install.
-- Levels 1 to 5 work offline on the mock. Levels 6 to 10 need both `pi` and an OpenRouter key; if either is missing, say so and continue, the rest of the lab still works.
+- Levels 1 to 5 work offline on the mock. Levels 6 to 10 need both `pi` and a TypeSafe key; if either is missing, say so and continue, the rest of the lab still works.
 
 ## Workflow
 
@@ -60,9 +60,9 @@ Then the standard tools:
 
 ### Step 2 — Check Environment
 
-6. Check whether `OPENROUTER_API_KEY` is set in the shell or in `ENV_FILE`: `grep -q '^OPENROUTER_API_KEY=' .env 2>/dev/null || [ -n "$OPENROUTER_API_KEY" ]`. Report set or not set, never the value.
-7. If not set, ask the user whether they have an OpenRouter key (https://openrouter.ai/keys). If yes, ask them to paste it into `ENV_FILE` themselves, or copy `ENV_SAMPLE` to `ENV_FILE` for them and tell them which line to fill. If no, say that levels 1 to 5 run offline on the mock and levels 6 to 10 stay unavailable until a key exists.
-8. Optionally note `TYPESAFE_API_KEY` (direct TypeSafe backend, takes precedence over OpenRouter) and `JEV_AGENT_MODEL` (the pi model for levels 6 to 10, default `openrouter/google/gemini-3.8-flash`). Do not ask for them.
+6. Check whether `TYPESAFE_API_KEY` is set in the shell or in `ENV_FILE`: `grep -q '^TYPESAFE_API_KEY=' .env 2>/dev/null || [ -n "$TYPESAFE_API_KEY" ]`. Report set or not set, never the value.
+7. If not set, ask the user whether they have a TypeSafe key (https://typesafe.ai). If yes, ask them to paste it into `ENV_FILE` themselves, or copy `ENV_SAMPLE` to `ENV_FILE` for them and tell them which line to fill. If no, say that levels 1 to 5 run offline on the mock and levels 6 to 10 stay unavailable until a key exists.
+8. Optionally note `LITELLM_API_KEY` (LiteLLM proxy for agent inference, used by pi for levels 6 to 10) and `JEV_AGENT_MODEL` (the pi model for levels 6 to 10, default `litellm/gemini/gemini-3.8-flash`). Do not ask for them.
 
 ### Step 3 — Install Dependencies
 
@@ -91,7 +91,7 @@ Next steps, as commands the user can paste:
 ```bash
 just web            # build and serve the lab on http://127.0.0.1:4399, opens the browser
 just jev1           # one level in the terminal, jev1 through jev10; add a, b, or c for one option (just jev4 b)
-just test-live      # 10 live tests against real Jev, needs OPENROUTER_API_KEY
+just test-live      # 10 live tests against real Jev, needs TYPESAFE_API_KEY
 just demo           # every level, every option, on the mock
 ```
 
