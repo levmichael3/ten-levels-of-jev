@@ -1,4 +1,7 @@
 .env
+!docs/
+!.opencode/
+!.claude/
 node_modules/
 .DS_Store
 apps/ten-levels/web/dist/
