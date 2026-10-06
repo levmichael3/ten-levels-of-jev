@@ -1,4 +1,4 @@
-import { jev } from '../core/client';
+import { jev } from '../core/client.ts';
 
 /**
  * Level 1: Destructive CLI Command Gate
