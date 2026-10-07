@@ -33,13 +33,13 @@ The `/install` command lives at `.claude/commands/install.md`. It checks Node, b
 
 ```bash
 cd apps/ten-levels/web && bun install && cd ../../..   # the Vue lab's dependencies; the levels themselves have none
-cp .env.sample .env                                    # then set LITELLM_API_KEY (or export it in your shell)
+cp .env.sample .env                                    # then set TYPESAFE_API_KEY and LITELLM_API_KEY
 npm install -g @earendil-works/pi-coding-agent         # pi, for levels 6 to 10
 just test                                              # 201 offline tests on the deterministic mock
 just web                                               # build the lab and open it on http://127.0.0.1:4399
 ```
 
-No key? Levels 1 to 5 still run on the offline mock. Levels 6 to 10 need both pi and the key.
+No TypeSafe key? Levels 1 to 5 still run on the offline mock. Levels 6 to 10 need pi and a LiteLLM key.
 
 ---
 
@@ -209,7 +209,7 @@ The agent router picks the harness (script, fast agent, reasoning agent, browser
 
 Levels 1 to 5 call Jev from code. Levels 6 to 10 put Jev inside the [pi coding agent](https://github.com/earendil-works/pi-mono), and each level gives the agent more say over the questions. **Levels 6 and 7 are hooks:** the agent never asks, and Jev runs at the tool call, the tool result, and the turn end. **Levels 8, 9, and 10 are tools:** the agent decides when to call Jev, and by Level 10 it writes the questions itself.
 
-Each level is one pi extension in `apps/ten-levels/extensions/` that imports its decision code from `src/levels/`. The lab runs each one as a real pi session (a fast workhorse model by default, set with `JEV_AGENT_MODEL`) in a throwaway git copy of `sandbox/`, a small billing service with one failing test on purpose.
+Each level is one pi extension in `apps/ten-levels/extensions/` that imports its decision code from `src/levels/`. The lab runs each one as a real pi session (a fast workhorse model by default, set with `JEV_AGENT_MODEL`) in a throwaway git copy of `sandbox/`, a small billing service with one failing test on purpose. Thinking is off. `.pi/models.json` maps that to `reasoning_effort: "minimal"` and sends `max_tokens` only. The LiteLLM group already sets `max_tokens`, so a second `max_completion_tokens` field is rejected, and `reasoning_effort: "none"` is rejected too.
 
 ### Level 6: Guardrail Hooks
 

@@ -35,7 +35,10 @@ details. The footer shows the model, the LLM cost, the Jev cost, and the context
 
 Jev decisions go to the TypeSafe System One API when `TYPESAFE_API_KEY` is set (`JEV_BACKEND=mock`
 forces the offline mock). Agent inference stays on LiteLLM. The agent model defaults to
-`litellm/open-weight-smart`; override with `JEV_AGENT_MODEL`. The child pi never inherits
+`litellm/open-weight-smart`; override with `JEV_AGENT_MODEL`. Pi starts with thinking off.
+`.pi/models.json` maps that to `reasoning_effort: "minimal"` and sends `max_tokens` only.
+This proxy rejects `"none"`, and it rejects a second `max_completion_tokens` field because
+the `open-weight-smart` group already sets `max_tokens`. The child pi never inherits
 `PI_MODEL`/`PI_PROVIDER` from a calling pi session. Extensions report every decision on stderr
 as `JEV_EVENT` lines and as session entries.
 
