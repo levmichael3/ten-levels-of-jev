@@ -60,9 +60,9 @@ Then the standard tools:
 
 ### Step 2 — Check Environment
 
-6. Check whether `LITELLM_API_KEY` is set in the shell or in `ENV_FILE`: `grep -q '^LITELLM_API_KEY=' .env 2>/dev/null || [ -n "$LITELLM_API_KEY" ]`. Report set or not set, never the value. This is the only credential. Do not ask for an OpenRouter or TypeSafe key.
-7. If not set, ask the user to paste a LiteLLM key into `ENV_FILE` themselves, or copy `ENV_SAMPLE` to `ENV_FILE` and tell them which line to fill. If they have no key, say that levels 1 to 5 run offline on the mock and levels 6 to 10 stay unavailable until a key exists.
-8. Optionally note `LITELLM_URL` (default `https://litellm.tikalk.dev/v1`), `JEV_MODEL` (decision model, default `open-weight-smart`), and `JEV_AGENT_MODEL` (the pi model for levels 6 to 10, default `litellm/open-weight-smart`). Do not ask for them.
+6. Check whether `TYPESAFE_API_KEY` and `LITELLM_API_KEY` are set in the shell or in `ENV_FILE`. Report set or not set, never the value. TypeSafe is the Jev credential. LiteLLM is the agent credential. Do not ask for an OpenRouter key.
+7. If either is missing, ask the user to paste that key into `ENV_FILE` themselves, or copy `ENV_SAMPLE` to `ENV_FILE` and tell them which line to fill. With no TypeSafe key, levels 1 to 5 run offline on the mock. With no LiteLLM key, levels 6 to 10 stay unavailable.
+8. Optionally note `LITELLM_URL` (default `https://litellm.tikalk.dev/v1`), `JEV_MODEL` (System One model, default `jev-latest`), and `JEV_AGENT_MODEL` (the pi model for levels 6 to 10, default `litellm/open-weight-smart`). Do not ask for them.
 
 ### Step 3 — Install Dependencies
 

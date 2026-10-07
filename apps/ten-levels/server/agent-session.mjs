@@ -27,7 +27,7 @@ const IDLE_KILL_MS = 15 * 60_000;
 export const agentModel = () => process.env.JEV_AGENT_MODEL || "litellm/open-weight-smart";
 
 const BASE_ENV = ["PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "LC_ALL", "TERM", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY"];
-const JEV_KEYS = ["LITELLM_API_KEY", "LITELLM_URL"];
+const JEV_KEYS = ["LITELLM_API_KEY", "LITELLM_URL", "TYPESAFE_API_KEY"];
 
 /**
  * The environment the agent can see. Its bash tool can print every variable, so pi gets only what a
@@ -43,7 +43,7 @@ export function agentEnv(model, config) {
   for (const [name, value] of Object.entries(process.env)) {
     if (value !== undefined && (names.has(name) || name.startsWith("JEV_"))) env[name] = value;
   }
-  return { ...env, JEV_BACKEND: "litellm", JEV_LEVEL_CONFIG: JSON.stringify(config ?? {}) };
+  return { ...env, JEV_BACKEND: "typesafe", JEV_LEVEL_CONFIG: JSON.stringify(config ?? {}) };
 }
 
 const sessions = new Map();

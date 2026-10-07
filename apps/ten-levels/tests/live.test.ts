@@ -1,7 +1,7 @@
 /**
- * 10 live tests — one per level, each fully operating against LiteLLM.
- * Gated: `npm run test:live` sets JEV_LIVE=1 + JEV_BACKEND=litellm and requires
- * LITELLM_API_KEY.
+ * 10 live tests — one per level, each fully operating against the TypeSafe System One API.
+ * Gated: `npm run test:live` sets JEV_LIVE=1 + JEV_BACKEND=typesafe and requires
+ * TYPESAFE_API_KEY.
  *
  * Offline (`npm test`) every test here skips and the mock suite covers the logic.
  */
@@ -22,7 +22,7 @@ import * as l9 from "../src/levels/level09/index.ts";
 import * as l10 from "../src/levels/level10/index.ts";
 import { fileURLToPath } from "node:url";
 
-const LIVE = process.env.JEV_LIVE === "1" && !!process.env.LITELLM_API_KEY;
+const LIVE = process.env.JEV_LIVE === "1" && !!process.env.TYPESAFE_API_KEY;
 
 test("L1 live: single decisions behave on the real model", { skip: !LIVE }, async () => {
   const urgent = await l1.urgentGate("Integration is down, we are losing sales every hour. Please help immediately.");
@@ -82,7 +82,7 @@ test("L6 live: the bash gate blocks a wipe and allows a listing", { skip: !LIVE 
 });
 
 test("L7 live: a gear switch reads as switched, the same work does not", { skip: !LIVE }, async () => {
-  const client = new JevClient({ provider: "litellm" });
+  const client = new JevClient({ provider: "typesafe" });
   const switched = await client.systemOne({
     current_request: "Now write a CONTRIBUTING.md for this repo.",
     previous_work: "Read the auth files and explained login. Ran the tests.",

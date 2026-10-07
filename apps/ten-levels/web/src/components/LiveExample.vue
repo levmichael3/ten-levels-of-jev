@@ -11,7 +11,7 @@ import RunVisual from "./RunVisual.vue";
 import AgentChat from "./AgentChat.vue";
 import { visual } from "../lib/store";
 import type { StreamEvent } from "../lib/api";
-import { LEVELS } from "../lib/levels";
+import { GATE_HELP, LEVELS } from "../lib/levels";
 import type { JevUsage } from "../lib/cost";
 
 const props = defineProps<{ n: number; option: OptionMeta; agent?: boolean }>();
@@ -50,6 +50,7 @@ const visualOpen = ref(false);
 const visualEvents = ref<StreamEvent[]>([]);
 const visualDone = ref(false);
 const levelTitle = LEVELS.find((l) => l.n === props.n)?.title ?? "";
+const gateHelp = computed(() => GATE_HELP[props.n] ?? null);
 const answersHtml = ref("");
 let lastAnswers: Record<string, any> = {};
 
@@ -190,7 +191,13 @@ async function run() {
     <div v-if="agent" class="example agent">
       <section class="glass">
         <h3>Inputs</h3>
-        <div class="meta">A prompt set and the extension config</div>
+        <div class="meta">A prompt set and the extension config. The prompt itself is in the chat box.</div>
+        <div v-if="gateHelp" class="gate-help">
+          <p>{{ gateHelp.intro }}</p>
+          <ul>
+            <li v-for="item in gateHelp.items" :key="item.key"><b>{{ item.key }}.</b> {{ item.text }}</li>
+          </ul>
+        </div>
         <h4>Input Examples</h4>
         <div class="sets">
           <button v-for="(name, i) in setNames" :key="name" class="set" :class="{ selected: i === setIndex }" @click="loadSet(i)">{{ name }}</button>

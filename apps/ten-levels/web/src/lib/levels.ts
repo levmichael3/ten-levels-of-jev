@@ -27,6 +27,55 @@ export const LEVELS: LevelMeta[] = [
   { n: 10, title: "Fully Agentic DevOps Jev", sub: "Use This For: letting your agent decide on its own when to use Jev during complex infrastructure operations. One ask_jev tool, a nudge in the system prompt, and the agent reaches for a typed decision whenever one beats reasoning." },
 ];
 
+/** What the letters in an agent level actually turn on. Shown above the config editor. */
+export interface GateNote {
+  intro: string;
+  items: { key: string; text: string }[];
+}
+
+export const GATE_HELP: Record<number, GateNote> = {
+  6: {
+    intro: "The letters in gates are on/off switches for one hook, not three separate systems. Leave the field out and all three are on. Each sample turns on only its own letter. If a check errors or times out, the command is blocked. It does not run anyway.",
+    items: [
+      { key: "A", text: "Before bash. Deletes and wipes (kubectl delete, helm uninstall, terraform destroy, rm -rf, force-push) are blocked in code, with no Jev call. Other kubectl and helm commands go to the K8s gate. Everything else goes to the bash gate." },
+      { key: "B", text: "Before write or edit. A path outside the repo is blocked in code. Inside the repo, Jev checks whether the file or its content holds a credential." },
+      { key: "C", text: "Before bash, commands that would print a secret (kubectl get secret, terraform output, echo $KEY, cat .env) are blocked in code. After a read or an allowed command, output that looks like instructions aimed at the agent gets a warning banner. If that screen fails, the output is withheld." },
+    ],
+  },
+  7: {
+    intro: "A, B, and C are the same compaction hook. The story changes (logs, manifests, diffs). The lines object is the only switch, and the numbers are tokens in the agent's context, not a percent of the window. Jev only judges whether the task changed. Code picks the tier.",
+    items: [
+      { key: "notice", text: "At this many tokens, a finished or switched task is mentioned. Compacting is optional." },
+      { key: "recommend", text: "At this many tokens, the hook tells the agent to compact, then continue." },
+      { key: "request", text: "At this many tokens, the hook asks the agent to compact before it continues. Below notice, or while the same work is still in progress, the hook stays silent." },
+    ],
+  },
+  8: {
+    intro: "A, B, and C do not load different tools. Every option has the same three, and each one judges a file without putting the file in the agent's context. The letter only changes which files the prompt asks about.",
+    items: [
+      { key: "A", text: "Manifests under k8s/. ask_jev_file_bool: does this deployment run as root, skip limits, or mount a host path?" },
+      { key: "B", text: "Dockerfiles under docker/. Same yes/no tool: pinned tag, multi-stage build, root user." },
+      { key: "C", text: "Workflows under .github/workflows/. Same yes/no tool: pinned actions, an approval gate, no secret written in the file." },
+    ],
+  },
+  9: {
+    intro: "A, B, and C share one extension. ask_jev_files asks the same questions of many files in parallel. pick_first_file chooses which result to open. Code expands globs, drops junk, and stops at 255 files. The letter is the question, not a different gate.",
+    items: [
+      { key: "A", text: "Fleet security: Dockerfiles and dependency files. Which repos need action." },
+      { key: "B", text: "ArgoCD apps: sync policy, prune, health checks, resource limits." },
+      { key: "C", text: "Terraform: plan or drift per environment, then a severity." },
+    ],
+  },
+  10: {
+    intro: "A, B, and C share one tool, ask_jev. The agent supplies the state, the files, or a command, plus its own questions. A command is checked by the Level 6 bash gate before it runs. The letter is the situation the prompt starts from.",
+    items: [
+      { key: "A", text: "Incident: pod logs and events, then a root cause and a next action." },
+      { key: "B", text: "Pull request: API, Helm, and Terraform, then whether they still match." },
+      { key: "C", text: "Canary: latency and error rate against the SLO, then promote, hold, or roll back." },
+    ],
+  },
+};
+
 /** One sentence per use case, shown on the selectable cards. */
 export const USE_CASES: Record<number, [string, string][]> = {
   1: [
@@ -57,7 +106,7 @@ export const USE_CASES: Record<number, [string, string][]> = {
   6: [
     ["K8s gate", "Before any kubectl command runs: read only, reversible, or irreversible? Targets production without bypass tag? Blocked. The agent sees only the reason."],
     ["Write guard", "Paths outside the repo block in code. Inside, Jev asks whether the file or its content holds a credential or touches shared infrastructure."],
-    ["Secret screen", "After a read or a command, before the model sees it: does the output contain raw secrets, credentials, or production connection strings? Flagged output gets a banner."],
+    ["Secret screen", "Before bash, commands that would print a secret are blocked in code. After a read or an allowed command, instructions aimed at the agent get a banner. A failed screen withholds the output."],
   ],
   7: [
     ["Log truncator", "Four questions after every chunk: is this an error? Is this context? How relevant? The agent drops noise, keeps signals, highlights critical."],

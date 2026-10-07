@@ -217,6 +217,10 @@ table.cost tr.jev td:first-child{text-shadow:0 0 12px rgba(var(--accent-rgb),.45
 
 /* ---- input example sets ---- */
 .sets{display:flex;gap:10px;margin:6px 0 16px}
+.gate-help{margin:10px 0 14px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--glass-2)}
+.gate-help p{font-size:18px;color:var(--text);margin-bottom:8px}
+.gate-help li{font-size:18px;color:var(--muted);margin:6px 0 6px 18px}
+.gate-help b{color:var(--accent);font-weight:600}
 .set{font-size:18px;font-weight:600;padding:8px 18px;border-radius:999px;cursor:pointer;color:var(--muted);
   background:var(--glass-2);border:1px solid var(--border);transition:border-color .2s,color .2s,box-shadow .2s}
 .set:hover{border-color:var(--border-strong);color:var(--text)}

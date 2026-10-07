@@ -12,7 +12,7 @@ import { JevClient } from "../src/core/client.ts";
 import { validateQuestions, type Answer, type Questions, type State } from "../src/core/types.ts";
 
 let client: JevClient | undefined;
-export const jev = () => (client ??= new JevClient({ provider: "litellm" }));
+export const jev = () => (client ??= new JevClient({ provider: "typesafe" }));
 
 /** The level config the lab passed in, JEV_LEVEL_CONFIG as JSON. */
 export function levelConfig<T extends object>(fallback: T): T {

@@ -13,11 +13,12 @@
  *   DELETE /api/agent/:id
  *   GET  /*                   the built Vue app in ../web/dist (SPA fallback to index.html)
  *
- * Live by default when LITELLM_API_KEY is set; JEV_BACKEND=mock forces offline.
+ * Jev is live when TYPESAFE_API_KEY is set; JEV_BACKEND=mock forces offline.
+ * The agent still uses LiteLLM.
  */
-// The demo opts into mock only when no LiteLLM key exists. Otherwise the
-// shared client uses LiteLLM, once on construction.
-if (!process.env.JEV_BACKEND && !process.env.LITELLM_API_KEY?.trim()) {
+// The demo opts into mock only when no TypeSafe key exists. Otherwise the
+// shared client calls System One, once on construction.
+if (!process.env.JEV_BACKEND && !process.env.TYPESAFE_API_KEY?.trim()) {
   process.env.JEV_BACKEND = "mock";
 }
 

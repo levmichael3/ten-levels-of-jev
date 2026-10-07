@@ -33,10 +33,11 @@ details. The footer shows the model, the LLM cost, the Jev cost, and the context
 | 9 Files at scale | the agent window: one Jev row per file, in parallel, then the pick |
 | 10 Agentic Jev | the agent window: ask_jev calls the agent chose to make, and the spend ledger |
 
-Jev decisions and agent inference both go through LiteLLM when `LITELLM_API_KEY` is set (`JEV_BACKEND=mock`
-forces the offline mock). The agent model defaults to `litellm/open-weight-smart`; override
-with `JEV_AGENT_MODEL`. The child pi never inherits `PI_MODEL`/`PI_PROVIDER` from a calling pi
-session. Extensions report every decision on stderr as `JEV_EVENT` lines and as session entries.
+Jev decisions go to the TypeSafe System One API when `TYPESAFE_API_KEY` is set (`JEV_BACKEND=mock`
+forces the offline mock). Agent inference stays on LiteLLM. The agent model defaults to
+`litellm/open-weight-smart`; override with `JEV_AGENT_MODEL`. The child pi never inherits
+`PI_MODEL`/`PI_PROVIDER` from a calling pi session. Extensions report every decision on stderr
+as `JEV_EVENT` lines and as session entries.
 
 Tests: **201 offline** (`npm test`, mock backend) + **10 live** (`npm run test:live`, one per level).
 
@@ -62,11 +63,11 @@ stand-in that mimics the exact wire contract (typed answers, distributions that 
 confidence). It stands in for **shape**, not intelligence: it decides by token overlap, so rubric
 wording matters more than it would live. `npm test` always runs the mock.
 
-Live runs go through the **LiteLLM proxy** (`LITELLM_URL`, default `https://litellm.tikalk.dev/v1`) using `LITELLM_API_KEY`. Decisions are a chat completion on `open-weight-smart` (`JEV_MODEL` overrides it). Requests send `reasoning_effort: "none"` so the model answers in about a second instead of thinking for 7–9; set `JEV_REASONING_EFFORT` (for example `low`) to change it. No other provider key is read.
+Live Jev calls `POST https://api.typesafe.ai/v1/systemone` with `TYPESAFE_API_KEY`. The body is the System One request (`model`, `state`, `questions`), and the default model is `jev-latest` (`JEV_MODEL` overrides it). LiteLLM is only the agent runtime.
 
 ```sh
-export LITELLM_API_KEY=...
-npm run demo:live   # every level against LiteLLM
+export TYPESAFE_API_KEY=...
+npm run demo:live   # every level against System One
 npm run test:live   # 10 live tests, one per level
 ```
 

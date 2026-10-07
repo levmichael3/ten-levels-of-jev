@@ -1,6 +1,6 @@
 /**
- * Runs all 10 DevOps levels against the mock backend (or live LiteLLM if LITELLM_API_KEY
- * is set) and prints one compact table per level.
+ * Runs all 10 DevOps levels against the mock backend (or the TypeSafe System One
+ * API if TYPESAFE_API_KEY is set) and prints one compact table per level.
  */
 import { fileURLToPath } from "node:url";
 import { jev } from "./core/client.ts";

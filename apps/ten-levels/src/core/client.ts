@@ -1,6 +1,7 @@
 /**
  * JevClient — a provider and credential snapshot, with no runtime fallback.
- * The only live backend is LiteLLM, authenticated with LITELLM_API_KEY.
+ * The only live backend is the TypeSafe System One API, authenticated with
+ * TYPESAFE_API_KEY. LiteLLM is the agent runtime, not this client.
  * Mock requires an explicit selection or node:test isolation; missing
  * production credentials fail closed.
  */
@@ -14,26 +15,14 @@ import {
   type SystemOneResponse,
 } from "./types.ts";
 
-export type JevProvider = "mock" | "litellm";
+export type JevProvider = "mock" | "typesafe";
 
-const DEFAULT_LITELLM_ORIGIN = "https://litellm.tikalk.dev/v1";
-const DEFAULT_MODEL = "open-weight-smart";
-/** open-weight-smart reasons by default: ~600 hidden tokens and 7-9 s per decision. "none" answers in about 1 s. */
-const DEFAULT_REASONING_EFFORT = "none";
+const SYSTEMONE_ENDPOINT = "https://api.typesafe.ai/v1/systemone";
+const DEFAULT_MODEL = "jev-latest";
 
 const KEY_ENV = {
-  litellm: "LITELLM_API_KEY",
+  typesafe: "TYPESAFE_API_KEY",
 } as const;
-
-/** Ask the chat model for the System One envelope and nothing else. */
-const DECISION_PROMPT = [
-  "You are a decision engine. Reply with one JSON object and no other text.",
-  'Shape: {"model":"<the model id>","answers":{...},"usage":{"input_tokens":0,"output_tokens":0}}',
-  "For each question id in the user message:",
-  '- noul: {"type":"noul","noul":<number from 0 to 1>}',
-  '- choice: {"type":"choice","choice":"<one declared key>","probabilities":{<every declared key>: <0..1>},"confidence":<0..1>}. Probabilities must sum to 1.',
-  '- score: {"type":"score","score":<0..level count minus 1>,"confidence":<0..1>,"probabilities":{"0":p,...},"legend":{"0":"<criteria[0]>",...}}. One probability and legend entry per criterion, in order. Probabilities must sum to 1.',
-].join("\n");
 
 const RETRY_STATUSES = new Set([429, 502, 503, 529]);
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -109,7 +98,6 @@ export class JevClient {
   private readonly model?: string;
   /** Snapshotted so a later JEV_MODEL change cannot retarget an existing client. */
   private readonly defaultModel: string;
-  private readonly reasoningEffort: string;
   private readonly timeoutMs: number;
   private readonly retryDelayMs: number;
   private readonly pricing?: JevPricing;
@@ -118,13 +106,12 @@ export class JevClient {
   calls = 0;
 
   constructor(opts: JevClientOptions = {}) {
-    if (opts.apiKey !== undefined && opts.provider !== "litellm") {
-      throw new Error("apiKey requires an explicit live opts.provider (litellm).");
+    if (opts.apiKey !== undefined && opts.provider !== "typesafe") {
+      throw new Error("apiKey requires an explicit live opts.provider (typesafe).");
     }
     this.provider = selectProvider(opts.provider);
     this.model = opts.model;
     this.defaultModel = process.env.JEV_MODEL?.trim() || DEFAULT_MODEL;
-    this.reasoningEffort = process.env.JEV_REASONING_EFFORT?.trim() || DEFAULT_REASONING_EFFORT;
     this.timeoutMs = opts.timeoutMs ?? REQUEST_TIMEOUT_MS;
     this.retryDelayMs = opts.retryDelayMs ?? 500;
     if (!Number.isInteger(this.timeoutMs) || this.timeoutMs <= 0 || this.timeoutMs > 2_147_483_647) {
@@ -139,7 +126,7 @@ export class JevClient {
     }
     if (this.provider === "mock") return;
     this.apiKey = (opts.apiKey ?? process.env[KEY_ENV[this.provider]])?.trim();
-    this.endpoint = opts.baseUrl ?? litellmChatUrl(process.env.LITELLM_URL);
+    this.endpoint = opts.baseUrl ?? SYSTEMONE_ENDPOINT;
     if (!this.apiKey) {
       throw new Error(`Provider "${this.provider}" needs a nonblank apiKey or ${KEY_ENV[this.provider]}.`);
     }
@@ -204,7 +191,7 @@ export class JevClient {
         const res = await fetch(this.endpoint!, {
           method: "POST",
           headers: { Authorization: `Bearer ${this.apiKey}`, "Content-Type": "application/json" },
-          body: chatCompletionBody(requestedModel, requestText, this.reasoningEffort),
+          body: requestText,
           signal,
           redirect: "error",
         });
@@ -224,7 +211,12 @@ export class JevClient {
         }
         const responseText = await res.text();
         signal.throwIfAborted();
-        const response = parseLiveBody(responseText, requestedModel);
+        let response: unknown;
+        try {
+          response = JSON.parse(responseText);
+        } catch {
+          throw new ContractError("Invalid response JSON.");
+        }
         validateResponse(response, request.questions);
         const raw = { request, requestText, response, responseText };
         const out = withMeta(raw, this.provider, requestedModel, started, attempt, this.pricing);
@@ -244,86 +236,11 @@ function selectProvider(explicit?: JevProvider): JevProvider {
   const isolated = process.env.NODE_TEST_CONTEXT && process.env.JEV_LIVE !== "1";
   const selected = explicit ?? (isolated ? "mock" : process.env.JEV_BACKEND?.trim() || undefined);
   if (selected !== undefined) {
-    if (selected === "mock" || selected === "litellm") return selected;
-    throw new Error(`Unknown JEV backend "${selected}"; use mock or litellm.`);
+    if (selected === "mock" || selected === "typesafe") return selected;
+    throw new Error(`Unknown JEV backend "${selected}"; use mock or typesafe.`);
   }
-  if (process.env.LITELLM_API_KEY?.trim()) return "litellm";
-  throw new Error("No Jev credentials: set LITELLM_API_KEY, or explicitly select provider: mock / JEV_BACKEND=mock for offline use.");
-}
-
-/** Origin from LITELLM_URL, or the lab proxy. A full chat-completions URL is kept as given. */
-function litellmChatUrl(origin: string | undefined): string {
-  let raw = (origin?.trim() || DEFAULT_LITELLM_ORIGIN).replace(/\/$/, "");
-  if ((raw.startsWith("'") && raw.endsWith("'")) || (raw.startsWith('"') && raw.endsWith('"'))) {
-    raw = raw.slice(1, -1).trim().replace(/\/$/, "");
-  }
-  return raw.endsWith("/chat/completions") ? raw : `${raw}/chat/completions`;
-}
-
-function chatCompletionBody(model: string, requestText: string, reasoningEffort: string): string {
-  return JSON.stringify({
-    model,
-    temperature: 0,
-    reasoning_effort: reasoningEffort,
-    messages: [
-      { role: "system", content: DECISION_PROMPT },
-      { role: "user", content: requestText },
-    ],
-  });
-}
-
-/**
- * LiteLLM returns a chat completion. A body that is already a System One envelope
- * (the contract tests, or a proxy that speaks it) is used unchanged.
- */
-function parseLiveBody(responseText: string, requestedModel: string): SystemOneResponse {
-  let body: unknown;
-  try {
-    body = JSON.parse(responseText);
-  } catch {
-    throw new ContractError("Invalid response JSON.");
-  }
-  if (isObject(body) && isObject(body.answers) && typeof body.model === "string") {
-    return body as SystemOneResponse;
-  }
-  const content = chatMessageContent(body);
-  if (content === undefined) throw new ContractError("Invalid response envelope: expected model and answers.");
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(stripFence(content));
-  } catch {
-    throw new ContractError("Invalid response JSON.");
-  }
-  if (!isObject(parsed)) throw new ContractError("Invalid response envelope: expected model and answers.");
-  if (typeof parsed.model !== "string" || !parsed.model.trim()) {
-    parsed.model = (isObject(body) && typeof body.model === "string" && body.model.trim()) ? body.model : requestedModel;
-  }
-  if (!isObject(parsed.usage)) {
-    const usage = isObject(body) && isObject((body as { usage?: unknown }).usage)
-      ? (body as { usage: Record<string, unknown> }).usage
-      : undefined;
-    const input = usage?.prompt_tokens ?? usage?.input_tokens;
-    const output = usage?.completion_tokens ?? usage?.output_tokens;
-    parsed.usage = {
-      input_tokens: input,
-      output_tokens: output,
-      ...(typeof usage?.cost === "number" ? { cost: usage.cost } : {}),
-    };
-  }
-  return parsed as SystemOneResponse;
-}
-
-function chatMessageContent(body: unknown): string | undefined {
-  if (!isObject(body) || !Array.isArray(body.choices) || !isObject(body.choices[0])) return undefined;
-  const message = body.choices[0].message;
-  if (!isObject(message) || typeof message.content !== "string") return undefined;
-  return message.content;
-}
-
-function stripFence(content: string): string {
-  const trimmed = content.trim();
-  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
-  return fenced ? fenced[1] : trimmed;
+  if (process.env.TYPESAFE_API_KEY?.trim()) return "typesafe";
+  throw new Error("No Jev credentials: set TYPESAFE_API_KEY, or explicitly select provider: mock / JEV_BACKEND=mock for offline use.");
 }
 
 function resultCost(response: SystemOneResponse, provider: JevProvider, pricing?: JevPricing): JevCost {

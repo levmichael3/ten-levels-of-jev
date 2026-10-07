@@ -13,7 +13,7 @@ import {
 } from "../src/core/types.ts";
 
 const questions = { q: noul("Is this urgent?") };
-const LITELLM_ENDPOINT = "https://litellm.tikalk.dev/v1/chat/completions";
+const SYSTEMONE_ENDPOINT = "https://api.typesafe.ai/v1/systemone";
 
 // Each test file has its own process. Never inspect or use ambient credentials,
 // and deny all fetches unless this test supplies an entirely offline stub.
@@ -42,62 +42,55 @@ function ok(value: unknown = payload()): Response {
 }
 
 function live(opts: JevClientOptions = {}): JevClient {
-  return new JevClient({ provider: "litellm", apiKey: "dummy-litellm", retryDelayMs: 0, ...opts });
+  return new JevClient({ provider: "typesafe", apiKey: "dummy-typesafe", retryDelayMs: 0, ...opts });
 }
 
 function stub(t: TestContext, implementation: typeof fetch = async () => ok()) {
   return t.mock.method(globalThis, "fetch", implementation);
 }
 
-for (const [name, key, url] of [
-  ["LiteLLM key selects litellm", "dummy-llm", LITELLM_ENDPOINT],
-  ["key is trimmed", "  dummy-llm  ", LITELLM_ENDPOINT],
+for (const [name, key] of [
+  ["TypeSafe key selects typesafe", "dummy-ts"],
+  ["key is trimmed", "  dummy-ts  "],
 ] as const) {
   test(`provider selection: ${name}`, async (t) => {
     productionEnv();
-    process.env.LITELLM_API_KEY = key;
+    process.env.TYPESAFE_API_KEY = key;
     const fetch = stub(t);
     const client = new JevClient();
-    assert.equal(client.provider, "litellm");
+    assert.equal(client.provider, "typesafe");
     assert.equal(client.isLive, true);
     await client.systemOne("urgent", questions);
     const [called, init] = fetch.mock.calls[0].arguments;
-    assert.equal(called, url);
+    assert.equal(called, SYSTEMONE_ENDPOINT);
     assert.equal(new Headers(init?.headers).get("authorization"), `Bearer ${key.trim()}`);
     const sent = JSON.parse(init?.body as string);
-    assert.equal(sent.model, "open-weight-smart");
-    assert.equal(sent.messages[1].content, JSON.stringify({ model: "open-weight-smart", state: "urgent", questions }));
+    assert.equal(sent.model, "jev-latest");
+    assert.deepEqual(sent, { model: "jev-latest", state: "urgent", questions });
+    assert.equal(init?.body, JSON.stringify(sent));
   });
 }
-
-test("provider selection: LITELLM_URL is the chat-completions origin", async (t) => {
-  productionEnv();
-  process.env.LITELLM_API_KEY = "dummy-llm";
-  process.env.LITELLM_URL = "'https://proxy.example/v1/'";
-  const fetch = stub(t);
-  await new JevClient().systemOne("urgent", questions);
-  assert.equal(fetch.mock.calls[0].arguments[0], "https://proxy.example/v1/chat/completions");
-});
 
 for (const blank of [undefined, "", "  \t  "]) {
   test(`production with missing/blank keys fails closed (${JSON.stringify(blank)})`, () => {
     productionEnv();
-    if (blank !== undefined) process.env.LITELLM_API_KEY = blank;
+    process.env.LITELLM_API_KEY = "dummy-llm";
+    if (blank !== undefined) process.env.TYPESAFE_API_KEY = blank;
     assert.throws(() => new JevClient(), /No Jev credentials/);
   });
 }
 
 test("explicit provider wins; valid JEV_BACKEND overrides key precedence", () => {
   productionEnv();
-  process.env.LITELLM_API_KEY = "dummy-llm";
+  process.env.TYPESAFE_API_KEY = "dummy-ts";
   process.env.JEV_BACKEND = "mock";
   assert.equal(new JevClient().provider, "mock");
-  assert.equal(new JevClient({ provider: "litellm" }).provider, "litellm");
-  process.env.JEV_BACKEND = "litellm";
-  assert.equal(new JevClient().provider, "litellm");
+  assert.equal(new JevClient({ provider: "typesafe" }).provider, "typesafe");
+  process.env.JEV_BACKEND = "typesafe";
+  assert.equal(new JevClient().provider, "typesafe");
   process.env.JEV_BACKEND = "  ";
-  assert.equal(new JevClient().provider, "litellm");
-  for (const backend of ["openrouter", "typesafe", "not-a-provider"]) {
+  assert.equal(new JevClient().provider, "typesafe");
+  for (const backend of ["openrouter", "litellm", "not-a-provider"]) {
     process.env.JEV_BACKEND = backend;
     assert.throws(() => new JevClient(), /Unknown JEV backend/);
   }
@@ -108,80 +101,68 @@ test("explicit provider wins; valid JEV_BACKEND overrides key precedence", () =>
 test("explicit missing/blank provider key fails rather than falling back", () => {
   productionEnv();
   process.env.OPENROUTER_API_KEY = "dummy-or";
-  process.env.TYPESAFE_API_KEY = "dummy-ts";
-  assert.throws(() => new JevClient({ provider: "litellm" }), /LITELLM_API_KEY/);
-  process.env.JEV_BACKEND = "litellm";
-  assert.throws(() => new JevClient(), /LITELLM_API_KEY/);
   process.env.LITELLM_API_KEY = "dummy-llm";
-  assert.throws(() => new JevClient({ provider: "litellm", apiKey: " " }), /nonblank/);
+  assert.throws(() => new JevClient({ provider: "typesafe" }), /TYPESAFE_API_KEY/);
+  process.env.JEV_BACKEND = "typesafe";
+  assert.throws(() => new JevClient(), /TYPESAFE_API_KEY/);
+  process.env.TYPESAFE_API_KEY = "dummy-ts";
+  assert.throws(() => new JevClient({ provider: "typesafe", apiKey: " " }), /nonblank/);
 });
 
 test("apiKey requires an explicit live opts.provider, even with env selection or test isolation", async (t) => {
-  process.env.JEV_BACKEND = "litellm";
+  process.env.JEV_BACKEND = "typesafe";
   for (const provider of [undefined, "mock"] as const) {
     assert.throws(() => new JevClient({ provider, apiKey: "dummy" }), /explicit live opts.provider/);
   }
   productionEnv();
   assert.throws(() => new JevClient({ apiKey: "dummy" }), /explicit live opts.provider/);
   const fetch = stub(t);
-  await new JevClient({ provider: "litellm", apiKey: " dummy-explicit " }).systemOne("x", questions);
+  await new JevClient({ provider: "typesafe", apiKey: " dummy-explicit " }).systemOne("x", questions);
   assert.equal(new Headers(fetch.mock.calls[0].arguments[1]?.headers).get("authorization"), "Bearer dummy-explicit");
 });
 
 test("node:test isolation beats all ambient keys/backends; explicit and JEV_LIVE opt-ins still work", async () => {
+  process.env.TYPESAFE_API_KEY = "dummy-ts";
   process.env.LITELLM_API_KEY = "dummy-llm";
   process.env.OPENROUTER_API_KEY = "dummy-or";
-  for (const backend of ["openrouter", "typesafe", "invalid"]) {
+  for (const backend of ["openrouter", "litellm", "typesafe", "invalid"]) {
     process.env.JEV_BACKEND = backend;
     const client = new JevClient();
     assert.equal(client.provider, "mock");
     assert.equal((await client.systemOne("x", questions)).meta.cost.source, "mock");
   }
-  assert.equal(new JevClient({ provider: "litellm" }).provider, "litellm");
-  process.env.JEV_BACKEND = "litellm";
+  assert.equal(new JevClient({ provider: "typesafe" }).provider, "typesafe");
+  process.env.JEV_BACKEND = "typesafe";
   process.env.JEV_LIVE = "1";
-  assert.equal(new JevClient().provider, "litellm");
+  assert.equal(new JevClient().provider, "typesafe");
   delete process.env.JEV_BACKEND;
-  assert.equal(new JevClient().provider, "litellm");
+  assert.equal(new JevClient().provider, "typesafe");
 });
 
-test("litellm: env mutations cannot change provider, credentials, endpoint or model", async (t) => {
+test("typesafe: env mutations cannot change provider, credentials, endpoint or model", async (t) => {
   productionEnv();
-  process.env.LITELLM_API_KEY = "dummy-original";
+  process.env.TYPESAFE_API_KEY = "dummy-original";
   const fetch = stub(t);
   const client = new JevClient();
   await client.systemOne("first", questions);
-  process.env.LITELLM_API_KEY = "dummy-replaced";
-  process.env.LITELLM_URL = "https://other.example/v1";
+  process.env.TYPESAFE_API_KEY = "dummy-replaced";
+  process.env.LITELLM_API_KEY = "dummy-llm";
   process.env.JEV_MODEL = "other-model";
   process.env.JEV_BACKEND = "mock";
   await client.systemOne("second", questions);
-  delete process.env.LITELLM_API_KEY;
+  delete process.env.TYPESAFE_API_KEY;
   await client.systemOne("third", questions);
-  assert.equal(client.provider, "litellm");
+  assert.equal(client.provider, "typesafe");
   for (const call of fetch.mock.calls) {
     const [url, init] = call.arguments;
-    assert.equal(url, LITELLM_ENDPOINT);
+    assert.equal(url, SYSTEMONE_ENDPOINT);
     assert.equal(init?.method, "POST");
     assert.equal(init?.redirect, "error");
     assert.equal(new Headers(init?.headers).get("content-type"), "application/json");
     assert.equal(new Headers(init?.headers).get("authorization"), "Bearer dummy-original");
-    assert.equal(JSON.parse(init?.body as string).model, "open-weight-smart");
+    assert.equal(JSON.parse(init?.body as string).model, "jev-latest");
+    assert.equal(init?.body, JSON.stringify(JSON.parse(init?.body as string)));
   }
-});
-
-test("a LiteLLM chat completion unwraps into the System One envelope", async (t) => {
-  const envelope = payload();
-  stub(t, async () => ok({
-    model: "open-weight-smart",
-    choices: [{ message: { role: "assistant", content: "```json\n" + JSON.stringify({ answers: envelope.answers }) + "\n```" } }],
-    usage: { prompt_tokens: 11, completion_tokens: 7 },
-  }));
-  const result = await live().systemOne("x", questions);
-  assert.equal(result.model, "open-weight-smart");
-  assert.deepEqual(result.answers, envelope.answers);
-  assert.equal(result.usage.input_tokens, 11);
-  assert.equal(result.usage.output_tokens, 7);
 });
 
 test("custom endpoint, constructor model, per-call model and observer API remain compatible", async (t) => {
@@ -202,7 +183,7 @@ test("custom endpoint, constructor model, per-call model and observer API remain
   assert.equal(fetch.mock.calls[0].arguments[0], "https://example.invalid/decisions");
   const sent = JSON.parse(fetch.mock.calls[0].arguments[1]?.body as string);
   assert.equal(sent.model, "jev-pinned");
-  assert.equal(sent.messages[1].content, JSON.stringify({ model: "jev-pinned", state: { text: "x" }, questions }));
+  assert.deepEqual(sent, { model: "jev-pinned", state: { text: "x" }, questions });
 });
 
 test("raw retains exact wire text, unknown fields and provider meta/raw without enrichment or aliases", async (t) => {
@@ -226,7 +207,7 @@ test("raw retains exact wire text, unknown fields and provider meta/raw without 
     }
   });
   const result = await client.systemOne(state, qs);
-  assert.equal(JSON.parse(fetch.mock.calls[0].arguments[1]?.body as string).messages[1].content, result.raw.requestText);
+  assert.equal(fetch.mock.calls[0].arguments[1]?.body, result.raw.requestText);
   assert.deepEqual(result.raw.request, JSON.parse(result.raw.requestText));
   assert.deepEqual(result.raw.request.state, { text: "before" });
   assert.equal(result.raw.request.questions.q.instructions, "Is this urgent?");
@@ -240,7 +221,7 @@ test("raw retains exact wire text, unknown fields and provider meta/raw without 
   assert.equal(result.answers.q.type, "noul");
   result.answers.q.noul = 0.1;
   assert.deepEqual(result.raw.response, original);
-  assert.ok(!JSON.stringify(result.raw).includes("dummy-litellm"));
+  assert.ok(!JSON.stringify(result.raw).includes("dummy-typesafe"));
 });
 
 test("mock has the same raw contract and zero mock cost without network", async () => {
@@ -277,7 +258,7 @@ for (const status of [429, 502, 503, 529]) {
 
   test(`HTTP ${status} exhaustion fails after exactly three attempts`, async (t) => {
     const fetch = stub(t, async () => new Response("retry", { status }));
-    await assert.rejects(live().systemOne("x", questions), new RegExp(`litellm HTTP ${status}`));
+    await assert.rejects(live().systemOne("x", questions), new RegExp(`typesafe HTTP ${status}`));
     assert.equal(fetch.mock.callCount(), 3);
   });
 }
@@ -285,15 +266,16 @@ for (const status of [429, 502, 503, 529]) {
 for (const status of [400, 401, 402, 403, 404, 408, 422, 500, 504]) {
   test(`HTTP ${status} does not retry, fall back to another key, or switch endpoints`, async (t) => {
     productionEnv();
+    process.env.TYPESAFE_API_KEY = "dummy-ts";
     process.env.LITELLM_API_KEY = "dummy-llm";
     process.env.OPENROUTER_API_KEY = "dummy-or";
     const response = new Response("failure", { status });
     const fetch = stub(t, async () => response);
     const client = new JevClient();
-    await assert.rejects(client.systemOne("x", questions), new RegExp(`litellm HTTP ${status}`));
+    await assert.rejects(client.systemOne("x", questions), new RegExp(`typesafe HTTP ${status}`));
     assert.equal(fetch.mock.callCount(), 1);
-    assert.equal(fetch.mock.calls[0].arguments[0], LITELLM_ENDPOINT);
-    assert.equal(client.provider, "litellm");
+    assert.equal(fetch.mock.calls[0].arguments[0], SYSTEMONE_ENDPOINT);
+    assert.equal(client.provider, "typesafe");
     assert.equal(response.bodyUsed, true);
   });
 }
@@ -358,7 +340,7 @@ test("default backoff doubles with jitter and removes sleep listeners on success
   assert.equal(signal!.aborted, false, "successful calls clear the deadline timer");
 });
 
-for (const provider of ["mock", "litellm"] as const) {
+for (const provider of ["mock", "typesafe"] as const) {
   test(`${provider}: already-aborted calls reject before request events or transport`, async (t) => {
     const fetch = stub(t);
     const client = provider === "mock" ? new JevClient({ provider }) : live();
