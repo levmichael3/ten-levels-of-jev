@@ -6,13 +6,14 @@
       "apiKey": "$LITELLM_API_KEY",
       "compat": {
         "supportsDeveloperRole": false,
-        "supportsReasoningEffort": false
+        "supportsReasoningEffort": true
       },
       "models": [
         {
           "id": "open-weight-smart",
           "name": "Open Weight Smart (LiteLLM)",
           "reasoning": true,
+          "thinkingLevelMap": { "off": "none" },
           "contextWindow": 1048576,
           "maxOutputTokens": 65536
         }

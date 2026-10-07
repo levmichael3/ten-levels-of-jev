@@ -1,0 +1,14 @@
+name: Security scan
+on:
+  schedule:
+    - cron: "0 6 * * *"
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@master
+      - name: notify
+        env:
+          SCAN_TOKEN: hardcoded-in-the-workflow
+        run: echo "scan finished"

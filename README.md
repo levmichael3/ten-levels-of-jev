@@ -29,11 +29,11 @@ The `/install` command lives at `.claude/commands/install.md`. It checks Node, b
 
 ### Manual Install
 
-**Prereqs:** [Node 24](https://nodejs.org), [bun](https://bun.sh), [just](https://github.com/casey/just), [pi 0.85.1+](https://github.com/earendil-works/pi-mono) for levels 6 to 10, and an [OpenRouter key](https://openrouter.ai/keys) for live runs.
+**Prereqs:** [Node 24](https://nodejs.org), [bun](https://bun.sh), [just](https://github.com/casey/just), [pi 0.85.1+](https://github.com/earendil-works/pi-mono) for levels 6 to 10, and a LiteLLM key for live runs.
 
 ```bash
 cd apps/ten-levels/web && bun install && cd ../../..   # the Vue lab's dependencies; the levels themselves have none
-cp .env.sample .env                                    # then set OPENROUTER_API_KEY (or export it in your shell)
+cp .env.sample .env                                    # then set LITELLM_API_KEY (or export it in your shell)
 npm install -g @earendil-works/pi-coding-agent         # pi, for levels 6 to 10
 just test                                              # 201 offline tests on the deterministic mock
 just web                                               # build the lab and open it on http://127.0.0.1:4399

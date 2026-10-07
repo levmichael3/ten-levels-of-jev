@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: payments-db
+  namespace: production
+spec:
+  serviceName: payments-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payments-db
+  template:
+    metadata:
+      labels:
+        app: payments-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16.2
+          ports:
+            - containerPort: 5432
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 20Gi

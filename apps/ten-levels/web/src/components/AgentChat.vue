@@ -50,7 +50,7 @@ const listEl = ref<HTMLDivElement | null>(null);
 let unsubscribe: (() => void) | null = null;
 const toolRows = new Map<string, Row>();
 
-const shortModel = computed(() => model.value.replace(/^openrouter\//, ""));
+const shortModel = computed(() => model.value.replace(/^litellm\//, ""));
 const ctxLabel = computed(() => (contextTokens.value === null ? "context, waiting for the first reply" : `${contextTokens.value.toLocaleString("en-US")} tokens in context, ${(contextPct.value ?? 0).toFixed(1)}% of ${fmt(contextWindow.value)}`));
 const fmt = (n: number | null) => (n === null ? "" : n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
 const first = (s: string, n = 110) => { const line = (s ?? "").trim().split("\n")[0] ?? ""; return line.length > n ? line.slice(0, n - 1) + "…" : line; };

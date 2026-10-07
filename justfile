@@ -4,7 +4,7 @@ set shell := ["/bin/zsh", "-ic"]
 project_root := justfile_directory()
 app := project_root + "/apps/ten-levels"
 
-# Live through OpenRouter when OPENROUTER_API_KEY is set (put it in .env).
+# Live through LiteLLM when LITELLM_API_KEY is set (put it in .env).
 # JEV_BACKEND=mock forces the offline deterministic mock for any recipe.
 
 default:

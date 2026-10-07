@@ -1,5 +1,5 @@
 ---
-description: Install 10 Levels of Jev — prerequisites, the web dependencies, the TypeSafe key, pi for the agentic levels, and a first offline test run
+description: Install 10 Levels of Jev — prerequisites, the web dependencies, the LiteLLM key, pi for the agentic levels, and a first offline test run
 ---
 
 # Install 10 Levels of Jev
@@ -22,7 +22,7 @@ ENV_SAMPLE: `.env.sample`
 
 ```
 apps/ten-levels/
-├── src/core/          # the Jev wire contract and client (mock, TypeSafe, LiteLLM)
+├── src/core/          # the Jev wire contract and client (mock or LiteLLM)
 ├── src/levels/        # level01 .. level10, one file per option
 ├── extensions/        # pi extensions for levels 6 to 10, plus report.ts
 ├── sandbox/           # the repo the agents work in; .pi/settings.json sets keepRecentTokens
@@ -60,9 +60,9 @@ Then the standard tools:
 
 ### Step 2 — Check Environment
 
-6. Check whether `TYPESAFE_API_KEY` is set in the shell or in `ENV_FILE`: `grep -q '^TYPESAFE_API_KEY=' .env 2>/dev/null || [ -n "$TYPESAFE_API_KEY" ]`. Report set or not set, never the value.
-7. If not set, ask the user whether they have a TypeSafe key (https://typesafe.ai). If yes, ask them to paste it into `ENV_FILE` themselves, or copy `ENV_SAMPLE` to `ENV_FILE` for them and tell them which line to fill. If no, say that levels 1 to 5 run offline on the mock and levels 6 to 10 stay unavailable until a key exists.
-8. Optionally note `LITELLM_API_KEY` (LiteLLM proxy for agent inference, used by pi for levels 6 to 10) and `JEV_AGENT_MODEL` (the pi model for levels 6 to 10, default `litellm/gemini/gemini-3.8-flash`). Do not ask for them.
+6. Check whether `LITELLM_API_KEY` is set in the shell or in `ENV_FILE`: `grep -q '^LITELLM_API_KEY=' .env 2>/dev/null || [ -n "$LITELLM_API_KEY" ]`. Report set or not set, never the value. This is the only credential. Do not ask for an OpenRouter or TypeSafe key.
+7. If not set, ask the user to paste a LiteLLM key into `ENV_FILE` themselves, or copy `ENV_SAMPLE` to `ENV_FILE` and tell them which line to fill. If they have no key, say that levels 1 to 5 run offline on the mock and levels 6 to 10 stay unavailable until a key exists.
+8. Optionally note `LITELLM_URL` (default `https://litellm.tikalk.dev/v1`), `JEV_MODEL` (decision model, default `open-weight-smart`), and `JEV_AGENT_MODEL` (the pi model for levels 6 to 10, default `litellm/open-weight-smart`). Do not ask for them.
 
 ### Step 3 — Install Dependencies
 
@@ -91,7 +91,7 @@ Next steps, as commands the user can paste:
 ```bash
 just web            # build and serve the lab on http://127.0.0.1:4399, opens the browser
 just jev1           # one level in the terminal, jev1 through jev10; add a, b, or c for one option (just jev4 b)
-just test-live      # 10 live tests against real Jev, needs TYPESAFE_API_KEY
+just test-live      # 10 live tests against LiteLLM, needs LITELLM_API_KEY
 just demo           # every level, every option, on the mock
 ```
 

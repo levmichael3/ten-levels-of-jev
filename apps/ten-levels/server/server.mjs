@@ -13,11 +13,11 @@
  *   DELETE /api/agent/:id
  *   GET  /*                   the built Vue app in ../web/dist (SPA fallback to index.html)
  *
- * Live by default when a TypeSafe or OpenRouter key is set; JEV_BACKEND=mock forces offline.
+ * Live by default when LITELLM_API_KEY is set; JEV_BACKEND=mock forces offline.
  */
-// The demo opts into mock only when no live credentials exist. Otherwise the
-// shared client chooses TypeSafe first, then OpenRouter, once on construction.
-if (!process.env.JEV_BACKEND && !process.env.TYPESAFE_API_KEY?.trim() && !process.env.OPENROUTER_API_KEY?.trim()) {
+// The demo opts into mock only when no LiteLLM key exists. Otherwise the
+// shared client uses LiteLLM, once on construction.
+if (!process.env.JEV_BACKEND && !process.env.LITELLM_API_KEY?.trim()) {
   process.env.JEV_BACKEND = "mock";
 }
 

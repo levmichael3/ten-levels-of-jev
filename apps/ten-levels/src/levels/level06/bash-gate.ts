@@ -40,6 +40,17 @@ export interface GateDecision {
 export const BLOCK_NOTICE =
   "This block is final. Do not try to work around it with another command, another tool, a different path, or an encoding that does the same thing. Stop and tell the user what was blocked and why.";
 
+/**
+ * Obvious wipes, decided in code so a slow or failed Jev call cannot let them run.
+ * Returns null when the command is not one of these and Jev should judge it.
+ */
+export function codeGateCommand(command: string): GateDecision | null {
+  if (/\brm\s+-[a-z]*r|\bkubectl\s+delete\b|\bhelm\s+(uninstall|delete)\b|\bterraform\s+destroy\b|\bgit\s+push\b[^\n]*--force|\bgit\s+reset\s+--hard\b|\bdrop\s+(database|table)\b/i.test(command)) {
+    return { block: true, reason: "blocked before it ran: this command deletes or overwrites something that cannot be restored" };
+  }
+  return null;
+}
+
 /** Block or allow. A hook has no third option, so the middle ground allows and says why. */
 export function gateBash(a: BashGateAnswers, t: BashThresholds = BASH_THRESHOLDS): GateDecision {
   if (a.effect.choice === "irreversible" && a.effect.confidence >= t.irreversible) {

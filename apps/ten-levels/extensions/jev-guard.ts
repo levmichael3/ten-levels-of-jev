@@ -1,15 +1,18 @@
 /**
  * Level 6 extension: guardrail hooks. The agent never knows Jev is here.
  *
- *   tool_call    bash: gateBashCommand, block irreversible or destructive commands
+ *   tool_call    bash, before it runs: code rules, then the K8s gate or the bash gate.
+ *                A failed or timed-out check blocks. It does not let the command through.
  *                write, edit: gateWriteCall, block paths outside the repo (code) and credentials (Jev)
- *   tool_result  read, bash: screenToolResult, prepend a banner when the output carries instructions
+ *                bash when C is on: secret-printing commands are blocked before they run
+ *   tool_result  read, bash: screenToolResult, prepend a banner when the output carries instructions.
+ *                If that screen fails, the output is withheld.
  *
  * Every decision is reported on the side channel so the lab window shows it as it happens.
  * Load: pi -e extensions/jev-guard.ts --tools read,bash,edit,write
  */
 import { decide, levelConfig, report } from "./report.ts";
-import { BLOCK_NOTICE, gateBashCommand, gateWriteCall, screenToolResult } from "../src/levels/level06/index.ts";
+import { BLOCK_NOTICE, codeGateCommand, codeGateSecretCommand, gateBashCommand, gateK8SCommand, gateWriteCall, isClusterCommand, k8sNamespace, screenToolResult } from "../src/levels/level06/index.ts";
 
 type Option = "A" | "B" | "C";
 
@@ -17,23 +20,39 @@ export default function (pi: any) {
   const cfg = levelConfig<{ gates: Option[] }>({ gates: ["A", "B", "C"] });
   const on = (o: Option) => cfg.gates.includes(o);
 
+  const blocked = (tool: string, reason: string) => ({ block: true, reason: `jev-guard blocked this ${tool}: ${reason}. ${BLOCK_NOTICE}` });
+
   pi.on("tool_call", async (event: any, ctx: any) => {
+    const tool = String(event.toolName ?? "");
     try {
-      if (event.toolName === "bash" && on("A")) {
+      if (tool === "bash") {
         const command = String(event.input?.command ?? "");
-        const d = await gateBashCommand(command, ctx.cwd, (s, q) => decide(pi, "tool_call bash", s, q));
-        report(pi, "hook", { hook: "tool_call", tool: "bash", command, block: d.block, reason: d.reason });
-        if (d.block) return { block: true, reason: `jev-guard blocked this command: ${d.reason}. ${BLOCK_NOTICE}` };
+        const secret = codeGateSecretCommand(command);
+        const coded = codeGateCommand(command);
+        const floor = secret ?? coded;
+        if (floor?.block) {
+          report(pi, "hook", { hook: "tool_call", tool: "bash", command, block: true, reason: floor.reason });
+          return blocked("command", floor.reason);
+        }
+        if (on("A")) {
+          const d = isClusterCommand(command)
+            ? await gateK8SCommand(command, k8sNamespace(command), [], (s, q) => decide(pi, "tool_call bash", s, q))
+            : await gateBashCommand(command, ctx.cwd, (s, q) => decide(pi, "tool_call bash", s, q));
+          report(pi, "hook", { hook: "tool_call", tool: "bash", command, block: d.block, reason: d.reason });
+          if (d.block) return blocked("command", d.reason);
+        }
       }
-      if ((event.toolName === "write" || event.toolName === "edit") && on("B")) {
+      if ((tool === "write" || tool === "edit") && on("B")) {
         const path = String(event.input?.path ?? "");
         const content = String(event.input?.content ?? event.input?.newText ?? event.input?.new_string ?? "");
-        const d = await gateWriteCall(path, content, ctx.cwd, (s, q) => decide(pi, `tool_call ${event.toolName}`, s, q));
-        report(pi, "hook", { hook: "tool_call", tool: event.toolName, path, block: d.block, reason: d.reason });
-        if (d.block) return { block: true, reason: `jev-guard blocked this ${event.toolName}: ${d.reason}. ${BLOCK_NOTICE}` };
+        const d = await gateWriteCall(path, content, ctx.cwd, (s, q) => decide(pi, `tool_call ${tool}`, s, q));
+        report(pi, "hook", { hook: "tool_call", tool, path, block: d.block, reason: d.reason });
+        if (d.block) return blocked(tool, d.reason);
       }
     } catch (err: any) {
-      report(pi, "error", { hook: "tool_call", message: err?.message ?? String(err) });
+      const message = err?.message ?? String(err);
+      report(pi, "error", { hook: "tool_call", tool, message });
+      return blocked(tool, `the check failed before it ran (${message})`);
     }
   });
 
@@ -47,7 +66,9 @@ export default function (pi: any) {
         return { content: [{ type: "text", text: `${d.banner}\n\n${text}` }] };
       }
     } catch (err: any) {
-      report(pi, "error", { hook: "tool_result", message: err?.message ?? String(err) });
+      const message = err?.message ?? String(err);
+      report(pi, "error", { hook: "tool_result", message });
+      return { content: [{ type: "text", text: `[jev-guard] Output withheld: the screen failed (${message}).` }] };
     }
   });
 }

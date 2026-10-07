@@ -33,8 +33,8 @@ details. The footer shows the model, the LLM cost, the Jev cost, and the context
 | 9 Files at scale | the agent window: one Jev row per file, in parallel, then the pick |
 | 10 Agentic Jev | the agent window: ask_jev calls the agent chose to make, and the spend ledger |
 
-Live against OpenRouter when `OPENROUTER_API_KEY` is set (`JEV_BACKEND=mock` forces the offline
-mock for levels 1 to 5). The agent model defaults to `openrouter/google/gemini-3.8-flash`; override
+Jev decisions and agent inference both go through LiteLLM when `LITELLM_API_KEY` is set (`JEV_BACKEND=mock`
+forces the offline mock). The agent model defaults to `litellm/open-weight-smart`; override
 with `JEV_AGENT_MODEL`. The child pi never inherits `PI_MODEL`/`PI_PROVIDER` from a calling pi
 session. Extensions report every decision on stderr as `JEV_EVENT` lines and as session entries.
 
@@ -62,18 +62,16 @@ stand-in that mimics the exact wire contract (typed answers, distributions that 
 confidence). It stands in for **shape**, not intelligence: it decides by token overlap, so rubric
 wording matters more than it would live. `npm test` always runs the mock.
 
-Live runs go through **OpenRouter's decision endpoint** — no TypeSafe key needed (the transport
-pattern verified in the [jev-use-cases lab](https://openrouter.ai/~typesafe/jev-latest)):
+Live runs go through the **LiteLLM proxy** (`LITELLM_URL`, default `https://litellm.tikalk.dev/v1`) using `LITELLM_API_KEY`. Decisions are a chat completion on `open-weight-smart` (`JEV_MODEL` overrides it). Requests send `reasoning_effort: "none"` so the model answers in about a second instead of thinking for 7–9; set `JEV_REASONING_EFFORT` (for example `low`) to change it. No other provider key is read.
 
 ```sh
-export OPENROUTER_API_KEY=...
-npm run demo:live   # every level against real Jev: POST openrouter.ai/api/alpha/decisions, ~typesafe/jev-latest
+export LITELLM_API_KEY=...
+npm run demo:live   # every level against LiteLLM
 npm run test:live   # 10 live tests, one per level
 ```
 
 Live responses pass a strict contract check before they reach your code (distributions cover every
-declared option and sum to ~1, choices are declared options). A direct TypeSafe backend exists too
-(`JEV_BACKEND=typesafe` + `TYPESAFE_API_KEY`) but is untested without a key.
+declared option and sum to ~1, choices are declared options).
 
 ## Where things live
 

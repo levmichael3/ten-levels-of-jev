@@ -18,6 +18,19 @@ test("L6 A: destructive intent blocks even when the effect pick is unsure", () =
   assert.match(d.reason, /destructive/);
 });
 
+test("L6 A: deletes are blocked in code, before any Jev call", () => {
+  assert.equal(l6.codeGateCommand("kubectl delete namespace preview-pr-1042")?.block, true);
+  assert.equal(l6.codeGateCommand("rm -rf /tmp/work")?.block, true);
+  assert.equal(l6.codeGateCommand("kubectl logs api -n production"), null);
+  assert.equal(l6.codeGateCommand("ls -la"), null);
+});
+
+test("L6 C: secret-printing commands are blocked in code, before they run", () => {
+  assert.equal(l6.codeGateSecretCommand("kubectl get secret db-credentials -n production -o yaml")?.block, true);
+  assert.equal(l6.codeGateSecretCommand("echo $STRIPE_API_KEY")?.block, true);
+  assert.equal(l6.codeGateSecretCommand("kubectl logs api -n production"), null);
+});
+
 test("L6 A: a read only command allows and says why", () => {
   const d = l6.gateBash({ effect: choiceA("read_only", 0.95), destructive_intent: noulA(0.02) });
   assert.equal(d.block, false);

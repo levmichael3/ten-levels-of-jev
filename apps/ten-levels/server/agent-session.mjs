@@ -18,20 +18,22 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const APP = fileURLToPath(new URL("../", import.meta.url));
+/** Repo .pi, not ~/.pi/agent. pi reads models.json from PI_CODING_AGENT_DIR. */
+const PI_DIR = join(APP, "../../.pi");
 const SESSIONS_DIR = join(APP, ".sessions");
 const WORK_DIR = join(APP, ".sandboxes");
 const IDLE_KILL_MS = 15 * 60_000;
 
-export const agentModel = () => process.env.JEV_AGENT_MODEL || "litellm/gemini/gemini-3.8-flash";
+export const agentModel = () => process.env.JEV_AGENT_MODEL || "litellm/open-weight-smart";
 
 const BASE_ENV = ["PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "LC_ALL", "TERM", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY"];
-const JEV_KEYS = ["LITELLM_API_KEY", "TYPESAFE_API_KEY"];
+const JEV_KEYS = ["LITELLM_API_KEY", "LITELLM_URL"];
 
 /**
  * The environment the agent can see. Its bash tool can print every variable, so pi gets only what a
- * session needs: the shell basics, the Jev keys, the agent model's provider key (openrouter/... reads
- * OPENROUTER_API_KEY), JEV_* settings, and any names listed in JEV_AGENT_ENV, comma separated. Never
- * PI_MODEL or PI_PROVIDER from a calling pi session. The level config rides in on one variable.
+ * session needs: the shell basics, the LiteLLM key and URL, JEV_* settings, and any names listed in
+ * JEV_AGENT_ENV, comma separated. Never PI_MODEL or PI_PROVIDER from a calling pi session. The level
+ * config rides in on one variable.
  */
 export function agentEnv(model, config) {
   const providerKey = `${model.split("/")[0].toUpperCase().replace(/[^A-Z0-9]/g, "_")}_API_KEY`;
@@ -41,7 +43,7 @@ export function agentEnv(model, config) {
   for (const [name, value] of Object.entries(process.env)) {
     if (value !== undefined && (names.has(name) || name.startsWith("JEV_"))) env[name] = value;
   }
-  return { ...env, JEV_BACKEND: "typesafe", JEV_LEVEL_CONFIG: JSON.stringify(config ?? {}) };
+  return { ...env, JEV_BACKEND: "litellm", JEV_LEVEL_CONFIG: JSON.stringify(config ?? {}) };
 }
 
 const sessions = new Map();
@@ -91,12 +93,16 @@ class AgentSession {
     const args = [
       "--mode", "rpc", "--offline", "--approve", // trust the sandbox's .pi/settings.json (keepRecentTokens)
       "--no-extensions", "--no-skills", "--no-prompt-templates", "--no-context-files", "--no-themes",
-      "--model", this.model, "--thinking", "low",
+      "--model", this.model, "--thinking", "off",
       "--session-dir", SESSIONS_DIR,
       "-e", extension,
       "--tools", tools.join(","),
     ];
-    this.child = spawn("pi", args, { cwd, env: agentEnv(this.model, config), stdio: ["pipe", "pipe", "pipe"] });
+    this.child = spawn("pi", args, {
+      cwd,
+      env: { ...agentEnv(this.model, config), PI_CODING_AGENT_DIR: PI_DIR },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
     this.child.on("error", (err) => this.push("error", { message: String(err?.message ?? err) }));
     this.child.on("close", (code) => {
       this.closed = true;

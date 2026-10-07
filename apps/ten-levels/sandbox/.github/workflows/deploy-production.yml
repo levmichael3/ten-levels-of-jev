@@ -1,0 +1,15 @@
+name: Deploy production
+on:
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    # The production environment requires a reviewer before this job starts.
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.PROD_DEPLOY_ROLE }}
+          aws-region: us-east-1
+      - run: kubectl apply -f k8s/ -n production
