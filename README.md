@@ -355,7 +355,7 @@ The landing page starts with every level hidden. Opening a level reveals its car
 ```
 .
 ├── apps/ten-levels/
-│   ├── src/core/            # types.ts (wire contract, validation, limits), client.ts (mock, OpenRouter, TypeSafe), helpers.ts, mock.ts
+│   ├── src/core/            # types.ts (wire contract, validation, limits), client.ts (mock and TypeSafe), helpers.ts, mock.ts
 │   ├── src/levels/          # level01 .. level10, one file per option plus index.ts; 6 to 10 hold the decision code the extensions import
 │   ├── src/level.ts         # the terminal runner behind just jev1 .. jev10
 │   ├── src/demo.ts          # every level, every option, printed end to end
@@ -416,7 +416,7 @@ Cmd+Enter runs the example or sends the prompt.
 
 - **The mock is shape, not intelligence.** Offline it decides by word overlap, so rubric wording matters more than it does live. The live suite checks what each level means. The offline suite checks contracts and decision code.
 - **Level 6 options gate one path each.** Option B turns on only the write gate, and in one live run the agent routed around it: blocked twice writing `config/.env`, it wrote the same file with a bash heredoc. Every block now tells the agent the block is final and not to work around it, and the rerun stopped at the first block. That notice is an instruction, not a control. Load all three gates together (the extension's default) and still treat them as one signal among several.
-- **The agent can read its own environment.** Its bash tool can print every variable it was given, and in one live run it did. So the lab hands pi only the shell basics, the Jev keys, the agent model's provider key, and `JEV_*` settings. Add other variable names to `JEV_AGENT_ENV` when your model or tools need them. The OpenRouter key stays visible to the agent because the session needs it, so treat `.sessions/` as sensitive.
+- **The agent can read its own environment.** Its bash tool can print every variable it was given, and in one live run it did. So the lab hands pi only the shell basics, `TYPESAFE_API_KEY`, `LITELLM_API_KEY`, `LITELLM_URL`, and `JEV_*` settings. Add other variable names to `JEV_AGENT_ENV` when your model or tools need them. Treat `.sessions/` as sensitive.
 - **Context lines are tokens, not percent.** The default agent model has a million token window, so Level 7's lines default to 6k, 10k, and 14k tokens. The sandbox sets pi's keep recent tokens to 4k so compaction has material at that size.
 - **Agents do what agents do.** Level 10 mentions ask_jev in its prompts and nudges it in the system prompt, and the agent still decides. Some runs call it once, some more. That is the point of the level, and the ledger row says what happened.
 - **A session copy is not the sandbox.** Every session works in `.sandboxes/<id>/`, a git initialized copy, so an agent that fixes the failing test never changes what the next session sees. The copies are removed on close.

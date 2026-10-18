@@ -2,6 +2,7 @@
  * Run one level or one option from the terminal:
  *   node src/level.ts 4      Level 4, all three options
  *   node src/level.ts 4 b    Level 4, option B only
+ *   node src/level.ts 7 option=A   same as `a`; `just jev7 option=A` passes this form
  * Prints every request, typed answer, latency, and decision.
  *
  * Live through the TypeSafe System One API when TYPESAFE_API_KEY is set;
@@ -196,11 +197,19 @@ const LEVELS: Record<number, Level> = {
 
 };
 
+/** `a`, `option=A`, and `option="A"` all select one option. Blank runs all three. */
+function parseWhich(raw: string | undefined): "" | "A" | "B" | "C" | null {
+  const text = (raw ?? "").trim();
+  if (!text) return "";
+  const match = text.match(/^(?:option=)?(['"]?)([abcABC])\1$/);
+  return match ? match[2].toUpperCase() as "A" | "B" | "C" : null;
+}
+
 async function main() {
   const n = Number(process.argv[2]);
   const level = LEVELS[n];
-  const which = (process.argv[3] ?? "").toUpperCase();
-  if (!level || (which && !["A", "B", "C"].includes(which))) {
+  const which = parseWhich(process.argv[3]);
+  if (!level || which === null) {
     console.error(`usage: node src/level.ts <1..10> [a|b|c]`);
     process.exit(2);
   }

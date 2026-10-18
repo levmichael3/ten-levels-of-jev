@@ -82,12 +82,14 @@ class AgentSession {
     cwd = this.cwd;
     // A git repo of its own with a baseline commit, so `git diff` and `git status` show what the agent changed.
     try {
-      const git = (...args) => execFileSync("git", args, { cwd, stdio: "ignore" });
+      // Ignore the caller's global hooks and SSH signing. Lefthook rejects "sandbox baseline".
+      const git = (...args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "ignore", "pipe"] });
       git("init", "-q");
       git("add", "-A");
-      git("-c", "user.name=lab", "-c", "user.email=lab@local", "commit", "-qm", "sandbox baseline");
+      git("-c", "user.name=lab", "-c", "user.email=lab@local", "-c", "commit.gpgsign=false", "commit", "--no-verify", "-qm", "sandbox baseline");
     } catch (err) {
-      console.error(`sandbox git init failed: ${err?.message ?? err}`);
+      const detail = err?.stderr?.toString?.().trim() || err?.message || err;
+      console.error(`sandbox git init failed: ${detail}`);
     }
 
     const args = [

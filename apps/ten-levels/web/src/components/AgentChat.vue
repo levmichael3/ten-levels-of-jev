@@ -102,7 +102,12 @@ function onItem({ event, data }: AgentItem) {
       const m = data.message;
       if (m?.role !== "assistant") return;
       const t = textOf(m); const think = thinkingOf(m);
-      if (!t && !think) return;
+      if (!t && !think) {
+        if (m.errorMessage || m.stopReason === "error") {
+          add({ kind: "error", tag: "error", title: m.errorMessage || "the model request failed", details: m });
+        }
+        return;
+      }
       add({ kind: "agent", tag: "agent", title: first(t) || "(thinking only)", details: { text: t, thinking: think || undefined, usage: m.usage } });
       return;
     }
