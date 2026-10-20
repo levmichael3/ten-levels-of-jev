@@ -90,7 +90,8 @@ class AgentSession {
 
     const args = [
       "--mode", "rpc", "--offline", "--approve", // trust the sandbox's .pi/settings.json (keepRecentTokens)
-      "--no-extensions", "--no-skills", "--no-prompt-templates", "--no-context-files", "--no-themes",
+      "--no-skills", "--no-prompt-templates", "--no-context-files", "--no-themes",
+      // "--no-extensions" is intentionally absent: it conflicts with -e and breaks model resolution in pi
       "--model", this.model, "--thinking", "low",
       "--session-dir", SESSIONS_DIR,
       "-e", extension,
