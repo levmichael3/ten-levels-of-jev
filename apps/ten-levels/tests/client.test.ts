@@ -15,13 +15,12 @@ import {
 const questions = { q: noul("Is this urgent?") };
 const endpoints = {
   typesafe: "https://api.typesafe.ai/v1/systemone",
-  openrouter: "https://openrouter.ai/api/alpha/decisions",
 };
 
 // Each test file has its own process. Never inspect or use ambient credentials,
 // and deny all fetches unless this test supplies an entirely offline stub.
 beforeEach((t) => {
-  for (const key of ["TYPESAFE_API_KEY", "OPENROUTER_API_KEY", "JEV_BACKEND"]) delete process.env[key];
+  for (const key of ["TYPESAFE_API_KEY", "JEV_BACKEND"]) delete process.env[key];
   process.env.NODE_TEST_CONTEXT = "child-v8";
   process.env.JEV_LIVE = "0";
   assert.ok("mock" in t, "beforeEach requires a test context");
@@ -52,45 +51,35 @@ function stub(t: TestContext, implementation: typeof fetch = async () => ok()) {
   return t.mock.method(globalThis, "fetch", implementation);
 }
 
-for (const [name, typesafe, openrouter, expected] of [
-  ["both keys prefer TypeSafe", "dummy-ts", "dummy-or", "typesafe"],
-  ["TypeSafe only", "dummy-ts", "", "typesafe"],
-  ["OpenRouter only", "", "dummy-or", "openrouter"],
-  ["blank TypeSafe is ignored", "  ", "dummy-or", "openrouter"],
-  ["keys are trimmed", "  dummy-ts  ", "dummy-or", "typesafe"],
+for (const [name, typesafe] of [
+  ["TypeSafe key", "dummy-ts"],
+  ["key is trimmed", "  dummy-ts  "],
 ] as const) {
   test(`provider selection: ${name}`, async (t) => {
     productionEnv();
     process.env.TYPESAFE_API_KEY = typesafe;
-    process.env.OPENROUTER_API_KEY = openrouter;
     const fetch = stub(t);
     const client = new JevClient();
-    assert.equal(client.provider, expected);
+    assert.equal(client.provider, "typesafe");
     assert.equal(client.isLive, true);
     await client.systemOne("urgent", questions);
     const [url, init] = fetch.mock.calls[0].arguments;
-    assert.equal(url, endpoints[expected]);
-    assert.equal(new Headers(init?.headers).get("authorization"), `Bearer ${expected === "typesafe" ? typesafe.trim() : openrouter.trim()}`);
+    assert.equal(url, endpoints.typesafe);
+    assert.equal(new Headers(init?.headers).get("authorization"), `Bearer ${typesafe.trim()}`);
   });
 }
 
 for (const blank of [undefined, "", "  \t  "]) {
-  test(`production with missing/blank keys fails closed (${JSON.stringify(blank)})`, () => {
+  test(`production with missing/blank key fails closed (${JSON.stringify(blank)})`, () => {
     productionEnv();
-    if (blank !== undefined) {
-      process.env.TYPESAFE_API_KEY = blank;
-      process.env.OPENROUTER_API_KEY = blank;
-    }
+    if (blank !== undefined) process.env.TYPESAFE_API_KEY = blank;
     assert.throws(() => new JevClient(), /No Jev credentials/);
   });
 }
 
-test("explicit provider wins; valid JEV_BACKEND overrides key precedence", () => {
+test("explicit provider wins; valid JEV_BACKEND overrides key-based selection", () => {
   productionEnv();
   process.env.TYPESAFE_API_KEY = "dummy-ts";
-  process.env.OPENROUTER_API_KEY = "dummy-or";
-  process.env.JEV_BACKEND = "openrouter";
-  assert.equal(new JevClient().provider, "openrouter");
   assert.equal(new JevClient({ provider: "typesafe" }).provider, "typesafe");
   assert.equal(new JevClient({ provider: "mock" }).provider, "mock");
   process.env.JEV_BACKEND = "mock";
@@ -107,7 +96,6 @@ test("explicit provider wins; valid JEV_BACKEND overrides key precedence", () =>
 
 test("explicit missing/blank provider key fails rather than falling back", () => {
   productionEnv();
-  process.env.OPENROUTER_API_KEY = "dummy-or";
   process.env.TYPESAFE_API_KEY = "  ";
   assert.throws(() => new JevClient({ provider: "typesafe" }), /TYPESAFE_API_KEY/);
   process.env.JEV_BACKEND = "typesafe";
@@ -117,60 +105,54 @@ test("explicit missing/blank provider key fails rather than falling back", () =>
 });
 
 test("apiKey requires an explicit live opts.provider, even with env selection or test isolation", async (t) => {
-  process.env.JEV_BACKEND = "openrouter";
+  process.env.JEV_BACKEND = "typesafe";
   for (const provider of [undefined, "mock"] as const) {
     assert.throws(() => new JevClient({ provider, apiKey: "dummy" }), /explicit live opts.provider/);
   }
   productionEnv();
   assert.throws(() => new JevClient({ apiKey: "dummy" }), /explicit live opts.provider/);
   const fetch = stub(t);
-  await new JevClient({ provider: "openrouter", apiKey: " dummy-explicit " }).systemOne("x", questions);
+  await new JevClient({ provider: "typesafe", apiKey: " dummy-explicit " }).systemOne("x", questions);
   assert.equal(new Headers(fetch.mock.calls[0].arguments[1]?.headers).get("authorization"), "Bearer dummy-explicit");
 });
 
 test("node:test isolation beats all ambient keys/backends; explicit and JEV_LIVE opt-ins still work", async () => {
   process.env.TYPESAFE_API_KEY = "dummy-ts";
-  process.env.OPENROUTER_API_KEY = "dummy-or";
-  for (const backend of ["openrouter", "typesafe", "invalid"]) {
+  for (const backend of ["typesafe", "invalid"]) {
     process.env.JEV_BACKEND = backend;
     const client = new JevClient();
     assert.equal(client.provider, "mock");
     assert.equal((await client.systemOne("x", questions)).meta.cost.source, "mock");
   }
-  assert.equal(new JevClient({ provider: "openrouter" }).provider, "openrouter");
-  process.env.JEV_BACKEND = "openrouter";
+  process.env.JEV_BACKEND = "typesafe";
   process.env.JEV_LIVE = "1";
-  assert.equal(new JevClient().provider, "openrouter");
+  assert.equal(new JevClient().provider, "typesafe");
   delete process.env.JEV_BACKEND;
   assert.equal(new JevClient().provider, "typesafe");
 });
 
-for (const provider of ["typesafe", "openrouter"] as const) {
-  test(`${provider}: env mutations cannot change provider, credentials, endpoint or model`, async (t) => {
-    productionEnv();
-    process.env[provider === "typesafe" ? "TYPESAFE_API_KEY" : "OPENROUTER_API_KEY"] = "dummy-original";
-    const fetch = stub(t);
-    const client = new JevClient();
-    await client.systemOne("first", questions);
-    process.env.TYPESAFE_API_KEY = "dummy-replaced-ts";
-    process.env.OPENROUTER_API_KEY = "dummy-replaced-or";
-    process.env.JEV_BACKEND = provider === "typesafe" ? "openrouter" : "typesafe";
-    await client.systemOne("second", questions);
-    delete process.env.TYPESAFE_API_KEY;
-    delete process.env.OPENROUTER_API_KEY;
-    await client.systemOne("third", questions);
-    assert.equal(client.provider, provider);
-    for (const call of fetch.mock.calls) {
-      const [url, init] = call.arguments;
-      assert.equal(url, endpoints[provider]);
-      assert.equal(init?.method, "POST");
-      assert.equal(init?.redirect, "error");
-      assert.equal(new Headers(init?.headers).get("content-type"), "application/json");
-      assert.equal(new Headers(init?.headers).get("authorization"), "Bearer dummy-original");
-      assert.equal(JSON.parse(init?.body as string).model, provider === "typesafe" ? "jev-latest" : "~typesafe/jev-latest");
-    }
-  });
-}
+test("typesafe: env mutations cannot change provider, credentials, endpoint or model", async (t) => {
+  productionEnv();
+  process.env.TYPESAFE_API_KEY = "dummy-original";
+  const fetch = stub(t);
+  const client = new JevClient();
+  await client.systemOne("first", questions);
+  process.env.TYPESAFE_API_KEY = "dummy-replaced";
+  process.env.JEV_BACKEND = "mock";
+  await client.systemOne("second", questions);
+  delete process.env.TYPESAFE_API_KEY;
+  await client.systemOne("third", questions);
+  assert.equal(client.provider, "typesafe");
+  for (const call of fetch.mock.calls) {
+    const [url, init] = call.arguments;
+    assert.equal(url, endpoints.typesafe);
+    assert.equal(init?.method, "POST");
+    assert.equal(init?.redirect, "error");
+    assert.equal(new Headers(init?.headers).get("content-type"), "application/json");
+    assert.equal(new Headers(init?.headers).get("authorization"), "Bearer dummy-original");
+    assert.equal(JSON.parse(init?.body as string).model, "jev-latest");
+  }
+});
 
 test("custom endpoint, constructor model, per-call model and observer API remain compatible", async (t) => {
   const fetch = stub(t);
@@ -274,7 +256,6 @@ for (const status of [400, 401, 402, 403, 404, 408, 422, 500, 504]) {
   test(`HTTP ${status} does not retry, fall back to another key, or switch endpoints`, async (t) => {
     productionEnv();
     process.env.TYPESAFE_API_KEY = "dummy-ts";
-    process.env.OPENROUTER_API_KEY = "dummy-or";
     const response = new Response("failure", { status });
     const fetch = stub(t, async () => response);
     const client = new JevClient();

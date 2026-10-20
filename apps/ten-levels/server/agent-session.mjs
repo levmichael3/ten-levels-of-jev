@@ -29,8 +29,8 @@ const JEV_KEYS = ["LITELLM_API_KEY", "TYPESAFE_API_KEY"];
 
 /**
  * The environment the agent can see. Its bash tool can print every variable, so pi gets only what a
- * session needs: the shell basics, the Jev keys, the agent model's provider key (openrouter/... reads
- * OPENROUTER_API_KEY), JEV_* settings, and any names listed in JEV_AGENT_ENV, comma separated. Never
+ * session needs: the shell basics, the Jev keys, the agent model's provider key (litellm/... reads
+ * LITELLM_API_KEY), JEV_* settings, and any names listed in JEV_AGENT_ENV, comma separated. Never
  * PI_MODEL or PI_PROVIDER from a calling pi session. The level config rides in on one variable.
  */
 export function agentEnv(model, config) {

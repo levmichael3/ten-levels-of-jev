@@ -17,7 +17,7 @@
  */
 // The demo opts into mock only when no live credentials exist. Otherwise the
 // shared client chooses TypeSafe first, then OpenRouter, once on construction.
-if (!process.env.JEV_BACKEND && !process.env.TYPESAFE_API_KEY?.trim() && !process.env.OPENROUTER_API_KEY?.trim()) {
+if (!process.env.JEV_BACKEND && !process.env.TYPESAFE_API_KEY?.trim()) {
   process.env.JEV_BACKEND = "mock";
 }
 
