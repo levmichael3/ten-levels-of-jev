@@ -33,8 +33,8 @@ details. The footer shows the model, the LLM cost, the Jev cost, and the context
 | 9 Files at scale | the agent window: one Jev row per file, in parallel, then the pick |
 | 10 Agentic Jev | the agent window: ask_jev calls the agent chose to make, and the spend ledger |
 
-Live against OpenRouter when `OPENROUTER_API_KEY` is set (`JEV_BACKEND=mock` forces the offline
-mock for levels 1 to 5). The agent model defaults to `openrouter/google/gemini-3.8-flash`; override
+Live against TypeSafe when `TYPESAFE_API_KEY` is set (`JEV_BACKEND=mock` forces the offline
+mock for levels 1 to 5). The agent model defaults to `litellm/free-smart`; override
 with `JEV_AGENT_MODEL`. The child pi never inherits `PI_MODEL`/`PI_PROVIDER` from a calling pi
 session. Extensions report every decision on stderr as `JEV_EVENT` lines and as session entries.
 

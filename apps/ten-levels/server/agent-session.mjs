@@ -22,15 +22,15 @@ const SESSIONS_DIR = join(APP, ".sessions");
 const WORK_DIR = join(APP, ".sandboxes");
 const IDLE_KILL_MS = 15 * 60_000;
 
-export const agentModel = () => process.env.JEV_AGENT_MODEL || "litellm/gemini/gemini-3.8-flash";
+export const agentModel = () => process.env.JEV_AGENT_MODEL || "litellm/free-smart";
 
 const BASE_ENV = ["PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "LC_ALL", "TERM", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY"];
 const JEV_KEYS = ["LITELLM_API_KEY", "TYPESAFE_API_KEY"];
 
 /**
  * The environment the agent can see. Its bash tool can print every variable, so pi gets only what a
- * session needs: the shell basics, the Jev keys, the agent model's provider key (openrouter/... reads
- * OPENROUTER_API_KEY), JEV_* settings, and any names listed in JEV_AGENT_ENV, comma separated. Never
+ * session needs: the shell basics, the Jev keys, the agent model's provider key (litellm/... reads
+ * LITELLM_API_KEY), JEV_* settings, and any names listed in JEV_AGENT_ENV, comma separated. Never
  * PI_MODEL or PI_PROVIDER from a calling pi session. The level config rides in on one variable.
  */
 export function agentEnv(model, config) {
@@ -90,7 +90,8 @@ class AgentSession {
 
     const args = [
       "--mode", "rpc", "--offline", "--approve", // trust the sandbox's .pi/settings.json (keepRecentTokens)
-      "--no-extensions", "--no-skills", "--no-prompt-templates", "--no-context-files", "--no-themes",
+      "--no-skills", "--no-prompt-templates", "--no-context-files", "--no-themes",
+      // "--no-extensions" is intentionally absent: it conflicts with -e and breaks model resolution in pi
       "--model", this.model, "--thinking", "low",
       "--session-dir", SESSIONS_DIR,
       "-e", extension,

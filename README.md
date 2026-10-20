@@ -22,7 +22,7 @@ Strip away the launch hype and [Jev](https://typesafe.ai) is one thing: **intell
 ### Agentic Install
 
 ```bash
-just install        # runs the /install slash command in Claude Code (or Pi, or your favorite agentic coding tool)
+just install        # runs the /install slash command in OpenCode (or Claude Code, Pi, or your favorite agentic coding tool)
 ```
 
 The `/install` command lives at `.claude/commands/install.md`. It checks Node, bun, just, git, and pi, installs the lab's dependencies, confirms your key without printing it, verifies the sandbox, and runs the offline suite.
@@ -390,7 +390,7 @@ just test         # 201 offline tests, deterministic mock
 just test-live    # 10 live tests, one per level
 just heroes       # re-render the ten hero SVGs
 just lint         # oxlint on the Vue app
-just install      # the /install walkthrough in Claude Code
+just install      # the /install walkthrough (OpenCode, falls back to Claude Code)
 ```
 
 ---

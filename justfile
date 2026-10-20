@@ -4,7 +4,7 @@ set shell := ["/bin/zsh", "-ic"]
 project_root := justfile_directory()
 app := project_root + "/apps/ten-levels"
 
-# Live through OpenRouter when OPENROUTER_API_KEY is set (put it in .env).
+# Live through TypeSafe when TYPESAFE_API_KEY is set (put it in .env).
 # JEV_BACKEND=mock forces the offline deterministic mock for any recipe.
 
 default:
@@ -85,10 +85,15 @@ test-live:
 heroes:
     cd "{{app}}/web" && bun run heroes
 
-# Walk through setup with the /install command in Claude Code.
+# Walk through setup with the /install command (OpenCode, falls back to Claude Code).
 install:
     #!/usr/bin/env bash
     set -e
-    printf '\n\033[1;36m▶ claude --dangerously-skip-permissions "/install"\033[0m\n\n'
-    claude --dangerously-skip-permissions "/install"
+    if command -v opencode >/dev/null 2>&1; then
+      printf '\n\033[1;36m▶ opencode run "/install"\033[0m\n\n'
+      opencode run "/install"
+    else
+      printf '\n\033[1;36m▶ claude --dangerously-skip-permissions "/install"\033[0m\n\n'
+      claude --dangerously-skip-permissions "/install"
+    fi
 
