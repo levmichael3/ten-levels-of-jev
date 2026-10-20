@@ -10,8 +10,8 @@
       },
       "models": [
         {
-          "id": "open-weight-smart",
-          "name": "Open Weight Smart (LiteLLM)",
+          "id": "free-smart",
+          "name": "Free Smart (LiteLLM)",
           "reasoning": true,
           "contextWindow": 1048576,
           "maxOutputTokens": 65536

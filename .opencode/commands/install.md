@@ -32,7 +32,7 @@ apps/ten-levels/
 justfile           # every recipe; loads .env
 ```
 
-Agent inference runs through the LiteLLM proxy (`LITELLM_API_KEY`, model `litellm/open-weight-smart` — already wired in the global OpenCode config and `.pi/models.json`). Jev decisions run through the TypeSafe API (`TYPESAFE_API_KEY`).
+Agent inference runs through the LiteLLM proxy (`LITELLM_API_KEY`, model `litellm/free-smart` — already wired in the global OpenCode config and `.pi/models.json`). Jev decisions run through the TypeSafe API (`TYPESAFE_API_KEY`).
 
 ## Instructions
 
@@ -64,7 +64,7 @@ Standard tools:
 
 6. Check whether `TYPESAFE_API_KEY` is set in the shell or in `ENV_FILE`: `grep -q '^TYPESAFE_API_KEY=' .env 2>/dev/null || [ -n "$TYPESAFE_API_KEY" ]`.
 7. When no key: offer to create `ENV_FILE` from `ENV_SAMPLE`, then ask the user to get a TypeSafe key (https://typesafe.ai). Never write a key the user did not provide — leave the `ENV_FILE` value blank for them to fill. When there is no key, say levels 1-5 run offline on the mock and levels 6-10 stay unavailable until a key exists.
-8. Optionally note `LITELLM_API_KEY` (LiteLLM proxy for agent inference, used by pi on levels 6-10) and `JEV_AGENT_MODEL` (the pi model for levels 6-10, default `litellm/open-weight-smart`). Do not ask for them.
+8. Optionally note `LITELLM_API_KEY` (LiteLLM proxy for agent inference, used by pi on levels 6-10) and `JEV_AGENT_MODEL` (the pi model for levels 6-10, default `litellm/free-smart`). Do not ask for them.
 
 ### Step 3 — Install dependencies
 

@@ -62,7 +62,7 @@ Then the standard tools:
 
 6. Check whether `TYPESAFE_API_KEY` is set in the shell or in `ENV_FILE`: `grep -q '^TYPESAFE_API_KEY=' .env 2>/dev/null || [ -n "$TYPESAFE_API_KEY" ]`. Report set or not set, never the value.
 7. If not set, ask the user whether they have a TypeSafe key (https://typesafe.ai). If yes, ask them to paste it into `ENV_FILE` themselves, or copy `ENV_SAMPLE` to `ENV_FILE` for them and tell them which line to fill. If no, say that levels 1 to 5 run offline on the mock and levels 6 to 10 stay unavailable until a key exists.
-8. Optionally note `LITELLM_API_KEY` (LiteLLM proxy for agent inference, used by pi for levels 6 to 10) and `JEV_AGENT_MODEL` (the pi model for levels 6 to 10, default `litellm/open-weight-smart`). Do not ask for them.
+8. Optionally note `LITELLM_API_KEY` (LiteLLM proxy for agent inference, used by pi for levels 6 to 10) and `JEV_AGENT_MODEL` (the pi model for levels 6 to 10, default `litellm/free-smart`). Do not ask for them.
 
 ### Step 3 — Install Dependencies
 
