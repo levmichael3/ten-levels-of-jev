@@ -22,7 +22,7 @@ const SESSIONS_DIR = join(APP, ".sessions");
 const WORK_DIR = join(APP, ".sandboxes");
 const IDLE_KILL_MS = 15 * 60_000;
 
-export const agentModel = () => process.env.JEV_AGENT_MODEL || "litellm/gemini/gemini-3.8-flash";
+export const agentModel = () => process.env.JEV_AGENT_MODEL || "litellm/open-weight-smart";
 
 const BASE_ENV = ["PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "LC_ALL", "TERM", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY"];
 const JEV_KEYS = ["LITELLM_API_KEY", "TYPESAFE_API_KEY"];
